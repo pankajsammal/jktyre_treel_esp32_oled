@@ -53,7 +53,7 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
         m_u8g2.setDrawColor(1);
     }
 
-    // 1. Top-Left: Position Label (FL, FR, RL, RR) - 3px left padding, 2px top gap
+    // 1. Top-Left: Position Label (FL, FR, RL, RR)
     m_u8g2.setFont(u8g2_font_profont11_tr);
     m_u8g2.drawStr(x + 3, y + 10, posLabel);
 
@@ -69,27 +69,34 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     m_u8g2.setFont(u8g2_font_6x10_tr);
     m_u8g2.drawStr(x + 3, y + 19, tempBuf);
 
-    // 3. Bottom-Left: Age (e.g. 50s, 2m, WAIT) - 2px gap above bottom border
+    // 3. Bottom-Left: Age (e.g. 50s, 2m, WAIT)
     String ageStr = has_data ? formatAge(tire.last_updated_ms, now_ms) : "WAIT";
     m_u8g2.setFont(u8g2_font_5x8_tr);
     m_u8g2.drawStr(x + 3, y + 26, ageStr.c_str());
 
-    // 4. Right Side: BIG Pressure Digits - Shifted down by 1px (baseline = y + 25) so top is at y + 1 (1px gap below top line!)
+    // 4. Right Side: Pressure Digits
+    // For KPA (3 digits like 225), use logisoso20_tn and shift 5px left to prevent right-edge clipping
     char psiBuf[10] = "--";
 
-    if (ConfigMgr.display_pressure_unit == UNIT_BAR) {
-        if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_bar);
-    } else if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
+    if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
         if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
-    } else { // UNIT_PSI (Default)
-        if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%d", (int)roundf(tire.pressure_psi));
+        m_u8g2.setFont(u8g2_font_logisoso20_tn);
+        int psiWidth = m_u8g2.getStrWidth(psiBuf);
+        int psiX = x + 55 - psiWidth;
+        if (psiX < x + 24) psiX = x + 24;
+        m_u8g2.drawStr(psiX, y + 24, psiBuf);
+    } else {
+        if (ConfigMgr.display_pressure_unit == UNIT_BAR) {
+            if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_bar);
+        } else { // UNIT_PSI (Default)
+            if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%d", (int)roundf(tire.pressure_psi));
+        }
+        m_u8g2.setFont(u8g2_font_logisoso24_tn);
+        int psiWidth = m_u8g2.getStrWidth(psiBuf);
+        int psiX = x + 57 - psiWidth;
+        if (psiX < x + 24) psiX = x + 24;
+        m_u8g2.drawStr(psiX, y + 25, psiBuf);
     }
-
-    m_u8g2.setFont(u8g2_font_logisoso24_tn);
-    int psiWidth = m_u8g2.getStrWidth(psiBuf);
-    int psiX = x + 60 - psiWidth;
-    if (psiX < x + 24) psiX = x + 24;
-    m_u8g2.drawStr(psiX, y + 25, psiBuf);
 }
 
 void DisplayManager::render(const TireData tires[4]) {
@@ -103,13 +110,13 @@ void DisplayManager::render(const TireData tires[4]) {
     // 1. TOP HEADER BAR (y = 0 to 7, line at y = 7)
     m_u8g2.drawHLine(0, 7, 128);
 
-    // Webserver IP on top left (baseline y = 6, 1px top margin)
+    // Webserver IP on top left
     String ipStr = WebDash.getIpAddress();
     if (ipStr == "0.0.0.0" || ipStr.length() == 0) ipStr = "--";
     m_u8g2.setFont(u8g2_font_4x6_tr);
     m_u8g2.drawStr(1, 6, ipStr.c_str());
 
-    // Global Pressure Unit on top right (baseline y = 6, 1px top margin)
+    // Global Pressure Unit on top right
     const char* unitLabel = "PSI";
     if (ConfigMgr.display_pressure_unit == UNIT_BAR) unitLabel = "BAR";
     else if (ConfigMgr.display_pressure_unit == UNIT_KPA) unitLabel = "KPA";
