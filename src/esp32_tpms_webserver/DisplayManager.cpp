@@ -53,9 +53,9 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
         m_u8g2.setDrawColor(1);
     }
 
-    // 1. Top-Left: Position Label (FL, FR, RL, RR) - 3px left padding, 1px top gap
+    // 1. Top-Left: Position Label (FL, FR, RL, RR) - 3px left padding, 2px top gap
     m_u8g2.setFont(u8g2_font_profont11_tr);
-    m_u8g2.drawStr(x + 3, y + 9, posLabel);
+    m_u8g2.drawStr(x + 3, y + 10, posLabel);
 
     // 2. Mid-Left: Temperature (e.g. 27C or 81F)
     char tempBuf[10];
@@ -67,14 +67,14 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
         else snprintf(tempBuf, sizeof(tempBuf), "--C");
     }
     m_u8g2.setFont(u8g2_font_6x10_tr);
-    m_u8g2.drawStr(x + 3, y + 18, tempBuf);
+    m_u8g2.drawStr(x + 3, y + 19, tempBuf);
 
     // 3. Bottom-Left: Age (e.g. 50s, 2m, WAIT) - 2px gap above bottom border
     String ageStr = has_data ? formatAge(tire.last_updated_ms, now_ms) : "WAIT";
     m_u8g2.setFont(u8g2_font_5x8_tr);
     m_u8g2.drawStr(x + 3, y + 26, ageStr.c_str());
 
-    // 4. Right Side: BIG Pressure Digits - 3px right padding away from right border line
+    // 4. Right Side: BIG Pressure Digits - Shifted down by 1px (baseline = y + 25) so top is at y + 1 (1px gap below top line!)
     char psiBuf[10] = "--";
 
     if (ConfigMgr.display_pressure_unit == UNIT_BAR) {
@@ -89,8 +89,7 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     int psiWidth = m_u8g2.getStrWidth(psiBuf);
     int psiX = x + 60 - psiWidth;
     if (psiX < x + 24) psiX = x + 24;
-    int baselineY = (y == 8) ? 32 : 60;
-    m_u8g2.drawStr(psiX, baselineY, psiBuf);
+    m_u8g2.drawStr(psiX, y + 25, psiBuf);
 }
 
 void DisplayManager::render(const TireData tires[4]) {
