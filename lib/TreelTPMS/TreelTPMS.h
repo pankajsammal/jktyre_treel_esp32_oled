@@ -93,27 +93,18 @@ private:
     volatile uint32_t m_totalBlePackets = 0;
     volatile uint32_t m_tpmsPackets = 0;
 
-public:
-    TreelTPMS();
-    
-    void setWhitelist(const char* macs[4], const char* shortIds[4]);
-    void setCallback(TPMSCallback callback);
-    void begin(bool activeScan = true);
-    
-    TireData getTire(TirePosition pos) const;
-    const TireData* getAllTires() const { return m_tires; }
-    
-    uint32_t getTotalBlePackets() const { return m_totalBlePackets; }
-    uint32_t getTpmsPackets() const { return m_tpmsPackets; }
-    
-    // Low-level decoders
-    static void initAES();
-    static bool decryptAES128(const uint8_t* ciphertext, uint8_t* plaintext);
-    static bool decodeGATT(const uint8_t* payload, size_t len, const String& mac, int rssi, TireData& outReading);
-    static bool decodeBeacon(const uint8_t* payload, size_t len, const String& mac, int rssi, TireData& outReading);
-    TirePosition resolvePosition(const String& macFwd, const String& macRev, const String& payloadHex, const String& sensorId = "");
+    // Demo / Test Mode (Simulates normal & warning states)
+    void setDemoMode(bool enable);
+    bool isDemoMode() const { return m_demoMode; }
+    void update(); // Main periodic update loop (handles demo mode simulation)
 
     void processAdvertisedDevice(const NimBLEAdvertisedDevice* advertisedDevice);
+
+private:
+    bool m_demoMode = false;
+    unsigned long m_lastDemoStepMs = 0;
+    int m_demoStep = 0;
+    void runDemoStep();
 };
 
 extern TreelTPMS TreelSensorReceiver;

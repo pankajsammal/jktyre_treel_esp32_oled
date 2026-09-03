@@ -51,6 +51,49 @@ void TreelTPMS::setWhitelist(const char* macs[4], const char* shortIds[4]) {
     }
 }
 
+void TreelTPMS::setDemoMode(bool enable) {
+    m_demoMode = enable;
+    if (enable) {
+        m_demoStep = 0;
+        m_lastDemoStepMs = 0;
+    }
+}
+
+void TreelTPMS::update() {
+    if (m_demoMode) {
+        if (millis() - m_lastDemoStepMs >= 4000 || m_lastDemoStepMs == 0) {
+            m_lastDemoStepMs = millis();
+            runDemoStep();
+        }
+    }
+}
+
+void TreelTPMS::runDemoStep() {
+    m_totalBlePackets += 4;
+    m_tpmsPackets += 4;
+
+    struct DemoVal { float psi; float temp; int batt; const char* mode; };
+    static const DemoVal stepVals[4][4] = {
+        // Step 0: All Normal
+        { {32.0f, 27.0f, 90, "GATT/DEMO"}, {32.0f, 27.0f, 88, "GATT/DEMO"}, {30.0f, 26.0f, 85, "iBeacon"}, {30.0f, 26.0f, 82, "GATT/DEMO"} },
+        // Step 1: FL Low Pressure Warning (21.5 PSI)
+        { {21.5f, 28.0f, 90, "GATT/DEMO"}, {32.0f, 27.0f, 88, "GATT/DEMO"}, {30.0f, 26.0f, 85, "iBeacon"}, {30.0f, 26.0f, 82, "GATT/DEMO"} },
+        // Step 2: RR High Temp Warning (76.0 °C)
+        { {32.0f, 27.0f, 90, "GATT/DEMO"}, {32.0f, 27.0f, 88, "GATT/DEMO"}, {30.0f, 26.0f, 85, "iBeacon"}, {34.0f, 76.0f, 82, "GATT/DEMO"} },
+        // Step 3: FR High Pressure (48.5 PSI) & RL Low Battery (12%)
+        { {32.0f, 27.0f, 90, "GATT/DEMO"}, {48.5f, 35.0f, 88, "GATT/DEMO"}, {30.0f, 26.0f, 12, "iBeacon"}, {30.0f, 26.0f, 82, "GATT/DEMO"} }
+    };
+
+    int s = m_demoStep % 4;
+    for (int i = 0; i < 4; i++) {
+        m_tires[i].update(stepVals[s][i].psi, stepVals[s][i].temp, stepVals[s][i].batt, -65, stepVals[s][i].mode, "DEMO-ID");
+        if (m_userCallback) {
+            m_userCallback(m_tires[i]);
+        }
+    }
+    m_demoStep++;
+}
+
 void TreelTPMS::setCallback(TPMSCallback callback) {
     m_userCallback = callback;
 }

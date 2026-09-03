@@ -110,10 +110,20 @@ public:
     uint32_t getTotalBlePackets() const { return m_totalBlePackets; }
     uint32_t getTpmsPackets() const { return m_tpmsPackets; }
 
+    void setDemoMode(bool enable);
+    bool isDemoMode() const { return m_demoMode; }
+    void update();
+
     static void initAES();
     static inline bool fastDecryptAES128(const uint8_t* ciphertext, uint8_t* plaintext) {
         return (mbedtls_aes_crypt_ecb(&s_aesCtx, MBEDTLS_AES_DECRYPT, ciphertext, plaintext) == 0);
     }
+
+private:
+    bool m_demoMode = false;
+    uint32_t m_lastDemoStepMs = 0;
+    int m_demoStep = 0;
+    void runDemoStep();
 };
 
 extern TreelTPMSC3 TreelSensorReceiverC3;

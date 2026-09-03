@@ -4,10 +4,11 @@
 #include <Arduino.h>
 
 // =====================================================================
-// HARDWARE PIN CONFIGURATION (ESP32-C3 SuperMini RISC-V Board)
+// HARDWARE PIN CONFIGURATION & FEATURE SWITCHES (ESP32-C3 SuperMini)
 // =====================================================================
 #define ENABLE_WEBSERVER     true    // Set to false to disable Wi-Fi and Web Server (Pure BLE / Ultra Low Power)
 #define ENABLE_OLED          true   // Set to true if an I2C OLED screen is physically attached
+#define ENABLE_DEMO_MODE     false  // Set to true to test OLED, Web Dashboard & REST API with dummy values & alerts
 
 #define OLED_SDA_PIN         8      // ESP32-C3 SuperMini I2C SDA (GPIO 8)
 #define OLED_SCL_PIN         9      // ESP32-C3 SuperMini I2C SCL (GPIO 9)

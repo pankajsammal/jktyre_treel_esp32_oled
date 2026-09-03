@@ -35,11 +35,18 @@ void setup() {
     WebDash.begin();
 
     // 3. Start Zero-Allocation NimBLE Scanner
+    if (ENABLE_DEMO_MODE) {
+        TreelSensorReceiverC3.setDemoMode(true);
+        Logger.addLog("[DEMO] Test Mode ENABLED! Simulating live telemetry & warnings.");
+    }
     TreelSensorReceiverC3.begin(onTirePacketReceivedC3);
     Logger.addLog("[BLE] Ultra-Fast Zero-Allocation Scanner active! Monitoring 4 Tires.");
 }
 
 void loop() {
+    // 0. Update Receiver / Demo mode logic
+    TreelSensorReceiverC3.update();
+
     // 1. Handle HTTP Client requests
     WebDash.handleClient();
 

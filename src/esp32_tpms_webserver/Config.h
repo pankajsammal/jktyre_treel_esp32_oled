@@ -4,10 +4,11 @@
 #include <Arduino.h>
 
 // =====================================================================
-// HARDWARE PIN CONFIGURATION (Standard ESP32 30-Pin / 38-Pin DevKit)
+// HARDWARE PIN CONFIGURATION & FEATURE SWITCHES
 // =====================================================================
 #define ENABLE_WEBSERVER     true   // Set to false to disable Wi-Fi & Web Server completely
-#define ENABLE_OLED          false  // Set to false if running headless without OLED
+#define ENABLE_OLED          true   // Set to false if running headless without OLED
+#define ENABLE_DEMO_MODE     false  // Set to true to test OLED, Web Dashboard & REST API with dummy values & alerts
 
 #define OLED_SDA_PIN         14     // ESP32 GPIO 14
 #define OLED_SCL_PIN         27     // ESP32 GPIO 27

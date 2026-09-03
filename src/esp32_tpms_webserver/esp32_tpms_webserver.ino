@@ -37,12 +37,19 @@ void setup() {
     // 3. Initialize & Start TreelTPMS Receiver
     TreelSensorReceiver.setWhitelist(SENSOR_MACS, SENSOR_SHORT_IDS);
     TreelSensorReceiver.setCallback(onTirePacketReceived);
+    if (ENABLE_DEMO_MODE) {
+        TreelSensorReceiver.setDemoMode(true);
+        Logger.addLog("[DEMO] Test Mode ENABLED! Simulating live telemetry & warnings.");
+    }
     TreelSensorReceiver.begin(true);
 
     Logger.addLog("[BLE] TreelTPMS receiver started! Monitoring 4 tires.");
 }
 
 void loop() {
+    // 0. Update Receiver / Demo mode logic
+    TreelSensorReceiver.update();
+
     // 1. Handle Web Server requests
     WebDash.handleClient();
 
