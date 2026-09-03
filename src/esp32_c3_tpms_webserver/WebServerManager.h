@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <DNSServer.h>
 #include <TreelTPMS.h>
 #include "Config.h"
 #include "Logger.h"
@@ -12,6 +13,8 @@ class WebServerManager {
 private:
 #if ENABLE_WEBSERVER
     WebServer m_server;
+    DNSServer m_dnsServer;
+    bool m_apActive = false;
 #endif
     String m_wifiModeStr = "Disconnected";
     String m_ipAddress = "0.0.0.0";

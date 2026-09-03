@@ -298,11 +298,30 @@ void WebServerManager::begin() {
     }
 
     if (!staConnected) {
+        WiFi.disconnect(true, true);
+        delay(100);
+
         WiFi.mode(WIFI_AP);
-        WiFi.softAP(ConfigMgr.ap_ssid.c_str(), ConfigMgr.ap_pass.c_str());
-        m_ipAddress = WiFi.softAPIP().toString();
-        m_wifiModeStr = "AP (" + ConfigMgr.ap_ssid + ")";
-        Logger.addLog("[Wi-Fi] SoftAP Started! SSID: %s | URL: http://%s", ConfigMgr.ap_ssid.c_str(), m_ipAddress.c_str());
+
+        IPAddress local_IP(192, 168, 4, 1);
+        IPAddress gateway(192, 168, 4, 1);
+        IPAddress subnet(255, 255, 255, 0);
+
+        WiFi.softAPConfig(local_IP, gateway, subnet);
+
+        const char* pass = (ConfigMgr.ap_pass.length() >= 8) ? ConfigMgr.ap_pass.c_str() : nullptr;
+        bool apSuccess = WiFi.softAP(ConfigMgr.ap_ssid.c_str(), pass);
+
+        if (apSuccess) {
+            delay(100);
+            m_apActive = true;
+            m_ipAddress = WiFi.softAPIP().toString();
+            m_wifiModeStr = "AP (" + ConfigMgr.ap_ssid + ")";
+            m_dnsServer.start(53, "*", local_IP);
+            Logger.addLog("[Wi-Fi] SoftAP Active! Connect to '%s' | URL: http://%s", ConfigMgr.ap_ssid.c_str(), m_ipAddress.c_str());
+        } else {
+            Logger.addLog("[Wi-Fi ERROR] SoftAP failed to start '%s'!", ConfigMgr.ap_ssid.c_str());
+        }
     }
 
     m_server.on("/", HTTP_GET, [this]() { handleRoot(); });
@@ -311,6 +330,14 @@ void WebServerManager::begin() {
     m_server.on("/api/clear", HTTP_GET, [this]() { handleApiClear(); });
     m_server.on("/api/settings", HTTP_GET, [this]() { handleGetSettings(); });
     m_server.on("/api/settings", HTTP_POST, [this]() { handlePostSettings(); });
+
+    m_server.onNotFound([this]() {
+        if (m_apActive) {
+            m_server.send(200, "text/html", INDEX_HTML);
+        } else {
+            m_server.send(404, "text/plain", "Not Found");
+        }
+    });
 
     m_server.begin();
     Logger.addLog("[HTTP] Web Server active on port 80");
@@ -322,6 +349,9 @@ void WebServerManager::begin() {
 
 void WebServerManager::handleClient() {
 #if ENABLE_WEBSERVER
+    if (m_apActive) {
+        m_dnsServer.processNextRequest();
+    }
     m_server.handleClient();
 #endif
 }
