@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // =====================================================================
-// ⚙️ CENTRAL USER CONFIGURATION FILE (ESP32-C3 SuperMini)
+// CENTRAL USER CONFIGURATION FILE (ESP32-C3 SuperMini)
 // =====================================================================
 // Edit your Wi-Fi credentials, sensor MACs, alert thresholds, hardware
 // pins, display units, and feature switches below.
@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------------
 #define ENABLE_WEBSERVER     true    // Set to false to disable Wi-Fi and Web Server (Pure BLE / Ultra Low Power)
 #define ENABLE_OLED          true   // Set to true if an I2C OLED screen is physically attached
-#define ENABLE_DEMO_MODE     false  // Set to true to test OLED & Web Server with dummy values & warnings
+#define ENABLE_DEMO_MODE     true  // Set to true to test OLED & Web Server with dummy values & warnings
 
 // ---------------------------------------------------------------------
 // 2. DISPLAY UNIT PREFERENCES (OLED Display)
@@ -34,7 +34,7 @@
 // 3. ALERT & WARNING THRESHOLDS
 // ---------------------------------------------------------------------
 #define ALERT_MIN_PSI        26.0f  // Trigger Low Pressure alert if pressure drops below this (PSI)
-#define ALERT_MAX_PSI        45.0f  // Trigger High Pressure alert if pressure rises above this (PSI)
+#define ALERT_MAX_PSI        40.0f  // Trigger High Pressure alert if pressure rises above this (PSI)
 #define ALERT_MAX_TEMP_C     70.0f  // Trigger High Temperature alert if temp exceeds this (°C)
 #define ALERT_MIN_BATT       15     // Trigger Low Battery alert if battery drops below this (%)
 

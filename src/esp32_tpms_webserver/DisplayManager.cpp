@@ -90,14 +90,10 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     if (has_data) {
         snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
     }
-#else // UNIT_PSI (Default)
+#else // UNIT_PSI (Default: No Decimal)
     unitLabel = "PSI";
     if (has_data) {
-        if (tire.pressure_psi == (float)(int)tire.pressure_psi) {
-            snprintf(psiBuf, sizeof(psiBuf), "%d", (int)tire.pressure_psi);
-        } else {
-            snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_psi);
-        }
+        snprintf(psiBuf, sizeof(psiBuf), "%d", (int)roundf(tire.pressure_psi));
     }
 #endif
 
@@ -105,7 +101,7 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     int psiWidth = m_u8g2.getStrWidth(psiBuf);
     int psiX = x + 62 - psiWidth;
     if (psiX < x + 24) psiX = x + 24;
-    m_u8g2.drawStr(psiX, y + 20, psiBuf);
+    m_u8g2.drawStr(psiX, y + 21, psiBuf);
 
     // 5. Bottom-Right: Small Unit Label (PSI / BAR / KPA)
     m_u8g2.setFont(u8g2_font_4x6_tr);
