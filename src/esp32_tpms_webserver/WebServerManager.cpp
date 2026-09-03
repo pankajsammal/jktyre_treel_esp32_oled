@@ -205,7 +205,18 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                         document.getElementById('age-' + pos).innerText = 'Last: ' + formatAge(tire.age_s);
                         badge.innerText = tire.alert; badge.className = 'status-badge ' + (tire.alert === 'NORMAL' ? 'normal' : 'alert');
                         card.className = 'card ' + (tire.alert !== 'NORMAL' ? 'alert-low' : '');
-                    } else { badge.innerText = 'WAITING'; badge.className = 'status-badge'; }
+                    } else {
+                        document.getElementById('psi-' + pos).innerText = '--';
+                        document.getElementById('bar-' + pos).innerText = '(-- Bar)';
+                        document.getElementById('temp-' + pos).innerHTML = '-- &deg;C';
+                        document.getElementById('batt-' + pos).innerText = '--%';
+                        document.getElementById('mode-' + pos).innerText = '--';
+                        document.getElementById('rssi-' + pos).innerText = '-- dBm';
+                        document.getElementById('age-' + pos).innerText = 'Last: Never';
+                        badge.innerText = 'WAITING';
+                        badge.className = 'status-badge';
+                        card.className = 'card';
+                    }
                 });
             } catch (e) {}
         }
