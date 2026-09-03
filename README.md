@@ -64,11 +64,27 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 │   ├── PROTOCOL_SPECIFICATION.md      # Deep-dive BLE protocol & AES telemetry specification
 │   ├── ESP32_C3_SUPERMINI_GUIDE.md    # Dedicated setup & pinout guide for ESP32-C3 SuperMini
 │   └── WINDOWS_CLI_GUIDE.md           # Step-by-step setup for Windows Python CLI tool
-├── src/                               # ESP32 Firmware Source
-│   ├── esp32_tpms_webserver/          # Tested Firmware for Standard ESP32 (30/38 Pin DevKit)
-│   │   └── esp32_tpms_webserver.ino
-│   └── esp32_c3_tpms_webserver/       # Tested Firmware specifically for ESP32-C3 SuperMini
-│       └── esp32_c3_tpms_webserver.ino
+├── lib/                               # Reusable C++ Libraries
+│   └── TreelTPMS/                     # Standalone C++ Treel TPMS BLE Library
+│       ├── TreelTPMS.h                # Header-only/exportable library API
+│       ├── TreelTPMS.cpp              # AES-128 & iBeacon decoder implementation
+│       └── examples/
+│           └── BasicScanner/          # Standalone minimal 30-line Arduino example
+├── src/                               # ESP32 Modular Applications
+│   ├── esp32_tpms_webserver/          # Tested Modular Firmware for Standard ESP32 (30/38 Pin)
+│   │   ├── Config.h                   # Pins, Wi-Fi credentials & sensor whitelist
+│   │   ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
+│   │   ├── TreelTPMS.h / .cpp         # Core BLE receiver engine
+│   │   ├── DisplayManager.h / .cpp    # I2C OLED display renderer
+│   │   ├── WebServerManager.h / .cpp  # Web dashboard & REST API
+│   │   └── esp32_tpms_webserver.ino   # Clean ~45-line entry point sketch
+│   └── esp32_c3_tpms_webserver/       # Tested Modular Firmware for ESP32-C3 SuperMini
+│       ├── Config.h                   # Pinout & fast timeout configuration
+│       ├── Logger.h / Logger.cpp      # Zero-heap log buffer
+│       ├── TreelTPMS.h / .cpp         # RISC-V zero-allocation scanner
+│       ├── DisplayManager.h / .cpp    # Display driver
+│       ├── WebServerManager.h / .cpp  # Web dashboard & REST API
+│       └── esp32_c3_tpms_webserver.ino# Clean entry point sketch
 └── tools/                             # Desktop Tools
     └── python_tpms_app/               # Windows Python BLE Sniffer & Diagnostics
         ├── core/                      # Decoder & Scanner modules
