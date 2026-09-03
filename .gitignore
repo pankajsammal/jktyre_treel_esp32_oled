@@ -1,0 +1,29 @@
+# Arduino & ESP-IDF build outputs
+build/
+.bin
+.elf
+.hex
+
+# Python virtual environment & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Log files & CSV packet dumps
+*.log
+tpms_packets.csv
+tpms_raw_capture.csv
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
