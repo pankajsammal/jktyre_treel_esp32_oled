@@ -87,8 +87,8 @@ void TreelTPMSC3::begin(TPMSCallbackC3 callback) {
     NimBLEScan* pScan = NimBLEDevice::getScan();
     pScan->setScanCallbacks(new FastAdvertisedDeviceCallbacks(), true);
     pScan->setActiveScan(false);
-    pScan->setInterval(45);
-    pScan->setWindow(45);
+    pScan->setInterval(160); // 100 ms scan interval
+    pScan->setWindow(40);    // 25 ms scan window (leaves 75% RF radio time for Wi-Fi SoftAP & Web Server)
     pScan->setDuplicateFilter(false);
     pScan->setMaxResults(0);
     pScan->start(0, false);

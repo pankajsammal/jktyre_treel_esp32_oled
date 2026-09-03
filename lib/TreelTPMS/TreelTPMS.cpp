@@ -104,8 +104,8 @@ void TreelTPMS::begin(bool activeScan) {
     NimBLEScan* pScan = NimBLEDevice::getScan();
     pScan->setScanCallbacks(new TreelNimBLEScanCallbacks(), true);
     pScan->setActiveScan(activeScan);
-    pScan->setInterval(45);
-    pScan->setWindow(45);
+    pScan->setInterval(160); // 100 ms scan interval
+    pScan->setWindow(40);    // 25 ms scan window (leaves 75% RF radio time for Wi-Fi SoftAP & Web Server)
     pScan->setDuplicateFilter(false);
     pScan->start(0, false);
 }
