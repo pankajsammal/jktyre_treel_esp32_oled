@@ -65,8 +65,10 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 │   ├── ESP32_C3_SUPERMINI_GUIDE.md    # Dedicated setup & pinout guide for ESP32-C3 SuperMini
 │   └── WINDOWS_CLI_GUIDE.md           # Step-by-step setup for Windows Python CLI tool
 ├── src/                               # ESP32 Firmware Source
-│   └── esp32_tpms_webserver/
-│       └── esp32_tpms_webserver.ino   # Main Arduino sketch (NimBLE + AES + WebServer + OLED)
+│   ├── esp32_tpms_webserver/          # Tested Firmware for Standard ESP32 (30/38 Pin DevKit)
+│   │   └── esp32_tpms_webserver.ino
+│   └── esp32_c3_tpms_webserver/       # Tested Firmware specifically for ESP32-C3 SuperMini
+│       └── esp32_c3_tpms_webserver.ino
 └── tools/                             # Desktop Tools
     └── python_tpms_app/               # Windows Python BLE Sniffer & Diagnostics
         ├── core/                      # Decoder & Scanner modules
@@ -87,9 +89,13 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
    - **`NimBLE-Arduino`** (by *h2zero*) — Required for BLE scanning.
    - **`U8g2`** (by *Oliver Kraus*) — Required only if using OLED display (`ENABLE_OLED true`).
 
-### 2. Configure Sensor Whitelist & Wi-Fi
+### 2. Select Tested Firmware & Configure Settings
 
-Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino) and edit your Wi-Fi credentials and 4 sensor MAC addresses:
+Choose the tested sketch corresponding to your hardware:
+- **Standard ESP32 (30/38-Pin DevKit)**: Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino)
+- **ESP32-C3 SuperMini**: Open [`src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino`](src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino)
+
+Edit your Wi-Fi credentials and 4 sensor MAC addresses:
 
 ```cpp
 // --- Wi-Fi Settings ---

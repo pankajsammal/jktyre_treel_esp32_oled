@@ -22,24 +22,18 @@
 #include "mbedtls/aes.h"
 
 // =====================================================================
-// 1. HARDWARE PIN CONFIGURATION & BOARD AUTO-DETECTION
+// 1. HARDWARE PIN CONFIGURATION (Standard ESP32 30-Pin / 38-Pin DevKit)
+// =====================================================================
+// Note: For ESP32-C3 SuperMini, please use the dedicated tested firmware at:
+// src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino
 // =====================================================================
 #define ENABLE_WEBSERVER     true   // Set to false to disable Wi-Fi & Web Server completely
 #define ENABLE_OLED          false  // Set to false if running headless without OLED
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3)
-// --- ESP32-C3 SuperMini Configuration ---
-// Pinout: 3.3V, GND, SDA (GPIO 8), SCL (GPIO 9)
-#define OLED_SDA_PIN         8     // ESP32-C3 I2C SDA (GPIO 8)
-#define OLED_SCL_PIN         9     // ESP32-C3 I2C SCL (GPIO 9)
+// --- Standard ESP32 Header Pins ---
+#define OLED_SDA_PIN         14    // ESP32 GPIO 14
+#define OLED_SCL_PIN         27    // ESP32 GPIO 27
 #define OLED_VCC_PIN         -1    // Wire to dedicated 3.3V pin
-#else
-// --- Standard ESP32 (38-Pin / 30-Pin DevKit) ---
-// Left-Side Pinout: 3.3V (Pin 1), GND (Pin 14), SDA (GPIO 14 / Pin 12), SCL (GPIO 27 / Pin 11)
-#define OLED_SDA_PIN         14    // ESP32 GPIO 14 (Pin 12)
-#define OLED_SCL_PIN         27    // ESP32 GPIO 27 (Pin 11)
-#define OLED_VCC_PIN         -1    // Wire to dedicated 3.3V (Pin 1)
-#endif
 
 // Display Driver Selection:
 // - 1.3" OLED (SH1106): U8G2_SH1106_128X64_NONAME_F_HW_I2C (Default)

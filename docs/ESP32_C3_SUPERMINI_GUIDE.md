@@ -1,6 +1,9 @@
 # ESP32-C3 SuperMini Setup Guide — Treel TPMS BLE Receiver
 
-This step-by-step guide explains how to configure, wire, and flash the **Treel TPMS BLE Receiver & Web Server** on the ultra-compact **ESP32-C3 SuperMini** board.
+This step-by-step guide explains how to configure, wire, and flash the dedicated, tested **ESP32-C3 SuperMini Treel TPMS BLE Receiver & Web Server** firmware located at [`src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino`](file:///d:/projects/jktyre_treel_esp32/src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino).
+
+> [!NOTE]
+> The ESP32-C3 SuperMini uses a single-core RISC-V architecture. Use the dedicated firmware under `src/esp32_c3_tpms_webserver/` which is specifically optimized and tested for the ESP32-C3.
 
 ---
 
