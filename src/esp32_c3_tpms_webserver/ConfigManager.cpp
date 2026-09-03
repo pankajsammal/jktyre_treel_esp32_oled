@@ -11,6 +11,9 @@ ConfigManager::ConfigManager() {
     alert_min_batt        = ALERT_MIN_BATT;
     oled_sda_pin          = OLED_SDA_PIN;
     oled_scl_pin          = OLED_SCL_PIN;
+    wifi_ssid             = WIFI_SSID;
+    wifi_pass             = WIFI_PASS;
+    try_sta_first         = TRY_STA_FIRST;
     ap_ssid               = AP_SSID;
     ap_pass               = AP_PASS;
     enable_demo_mode      = ENABLE_DEMO_MODE;
@@ -27,6 +30,9 @@ void ConfigManager::begin() {
     alert_min_batt        = m_prefs.getInt("min_batt", ALERT_MIN_BATT);
     oled_sda_pin          = m_prefs.getInt("sda_pin", OLED_SDA_PIN);
     oled_scl_pin          = m_prefs.getInt("scl_pin", OLED_SCL_PIN);
+    wifi_ssid             = m_prefs.getString("sta_ssid", WIFI_SSID);
+    wifi_pass             = m_prefs.getString("sta_pass", WIFI_PASS);
+    try_sta_first         = m_prefs.getBool("try_sta", TRY_STA_FIRST);
     ap_ssid               = m_prefs.getString("ap_ssid", AP_SSID);
     ap_pass               = m_prefs.getString("ap_pass", AP_PASS);
     enable_demo_mode      = m_prefs.getBool("demo_mode", ENABLE_DEMO_MODE);
@@ -45,6 +51,9 @@ void ConfigManager::save() {
     m_prefs.putInt("min_batt", alert_min_batt);
     m_prefs.putInt("sda_pin", oled_sda_pin);
     m_prefs.putInt("scl_pin", oled_scl_pin);
+    m_prefs.putString("sta_ssid", wifi_ssid);
+    m_prefs.putString("sta_pass", wifi_pass);
+    m_prefs.putBool("try_sta", try_sta_first);
     m_prefs.putString("ap_ssid", ap_ssid);
     m_prefs.putString("ap_pass", ap_pass);
     m_prefs.putBool("demo_mode", enable_demo_mode);
@@ -61,6 +70,9 @@ void ConfigManager::resetToDefaults() {
     alert_min_batt        = ALERT_MIN_BATT;
     oled_sda_pin          = OLED_SDA_PIN;
     oled_scl_pin          = OLED_SCL_PIN;
+    wifi_ssid             = WIFI_SSID;
+    wifi_pass             = WIFI_PASS;
+    try_sta_first         = TRY_STA_FIRST;
     ap_ssid               = AP_SSID;
     ap_pass               = AP_PASS;
     enable_demo_mode      = ENABLE_DEMO_MODE;
@@ -77,6 +89,9 @@ String ConfigManager::getSettingsJson() {
     json += "\"min_batt\":" + String(alert_min_batt) + ",";
     json += "\"sda_pin\":" + String(oled_sda_pin) + ",";
     json += "\"scl_pin\":" + String(oled_scl_pin) + ",";
+    json += "\"wifi_ssid\":\"" + wifi_ssid + "\",";
+    json += "\"wifi_pass\":\"" + wifi_pass + "\",";
+    json += "\"try_sta\":" + String(try_sta_first ? "true" : "false") + ",";
     json += "\"ap_ssid\":\"" + ap_ssid + "\",";
     json += "\"ap_pass\":\"" + ap_pass + "\",";
     json += "\"demo_mode\":" + String(enable_demo_mode ? "true" : "false");
@@ -86,7 +101,8 @@ String ConfigManager::getSettingsJson() {
 
 bool ConfigManager::updateFromParams(const String& pressure_unit, const String& temp_unit,
                                     float min_psi, float max_psi, float max_temp, int min_batt,
-                                    int sda_pin, int scl_pin, const String& ap_s, const String& ap_p, bool demo_mode) {
+                                    int sda_pin, int scl_pin, const String& w_ssid, const String& w_pass, bool try_sta,
+                                    const String& ap_s, const String& ap_p, bool demo_mode) {
     if (pressure_unit == "BAR" || pressure_unit == "1") display_pressure_unit = UNIT_BAR;
     else if (pressure_unit == "KPA" || pressure_unit == "2") display_pressure_unit = UNIT_KPA;
     else display_pressure_unit = UNIT_PSI;
@@ -100,6 +116,9 @@ bool ConfigManager::updateFromParams(const String& pressure_unit, const String& 
     alert_min_batt   = min_batt;
     oled_sda_pin     = sda_pin;
     oled_scl_pin     = scl_pin;
+    if (w_ssid.length() > 0) wifi_ssid = w_ssid;
+    wifi_pass        = w_pass;
+    try_sta_first    = try_sta;
     if (ap_s.length() > 0) ap_ssid = ap_s;
     if (ap_p.length() >= 8) ap_pass = ap_p;
     enable_demo_mode = demo_mode;

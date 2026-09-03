@@ -18,6 +18,9 @@ public:
     int alert_min_batt;
     int oled_sda_pin;
     int oled_scl_pin;
+    String wifi_ssid;
+    String wifi_pass;
+    bool try_sta_first;
     String ap_ssid;
     String ap_pass;
     bool enable_demo_mode;
@@ -31,7 +34,8 @@ public:
     String getSettingsJson();
     bool updateFromParams(const String& pressure_unit, const String& temp_unit,
                          float min_psi, float max_psi, float max_temp, int min_batt,
-                         int sda_pin, int scl_pin, const String& ap_s, const String& ap_p, bool demo_mode);
+                         int sda_pin, int scl_pin, const String& w_ssid, const String& w_pass, bool try_sta,
+                         const String& ap_s, const String& ap_p, bool demo_mode);
 };
 
 extern ConfigManager ConfigMgr;

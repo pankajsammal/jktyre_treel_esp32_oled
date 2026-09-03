@@ -276,9 +276,9 @@ void WebServerManager::begin() {
     WiFi.mode(WIFI_STA);
     bool staConnected = false;
 
-    if (TRY_STA_FIRST && strlen(WIFI_SSID) > 0) {
-        Serial.printf("[Wi-Fi] Connecting to %s ...\n", WIFI_SSID);
-        WiFi.begin(WIFI_SSID, WIFI_PASS);
+    if (ConfigMgr.try_sta_first && ConfigMgr.wifi_ssid.length() > 0) {
+        Serial.printf("[Wi-Fi] Connecting to %s ...\n", ConfigMgr.wifi_ssid.c_str());
+        WiFi.begin(ConfigMgr.wifi_ssid.c_str(), ConfigMgr.wifi_pass.c_str());
 
         unsigned long startMs = millis();
         while (WiFi.status() != WL_CONNECTED && (millis() - startMs < (unsigned long)STA_TIMEOUT_S * 1000)) {
@@ -290,8 +290,8 @@ void WebServerManager::begin() {
         if (WiFi.status() == WL_CONNECTED) {
             staConnected = true;
             m_ipAddress = WiFi.localIP().toString();
-            m_wifiModeStr = "STA (" + String(WIFI_SSID) + ")";
-            Logger.addLog("[Wi-Fi] Connected to %s | IP: http://%s", WIFI_SSID, m_ipAddress.c_str());
+            m_wifiModeStr = "STA (" + ConfigMgr.wifi_ssid + ")";
+            Logger.addLog("[Wi-Fi] Connected to %s | IP: http://%s", ConfigMgr.wifi_ssid.c_str(), m_ipAddress.c_str());
         } else {
             Serial.println("[Wi-Fi] STA connection timed out!");
         }
@@ -378,12 +378,15 @@ void WebServerManager::handlePostSettings() {
     int min_batt      = m_server.arg("min_batt").toInt();
     int sda_pin       = m_server.arg("sda_pin").toInt();
     int scl_pin       = m_server.arg("scl_pin").toInt();
+    String wifi_ssid  = m_server.arg("wifi_ssid");
+    String wifi_pass  = m_server.arg("wifi_pass");
+    bool try_sta      = (m_server.arg("try_sta") == "true" || m_server.arg("try_sta") == "1");
     String ap_ssid    = m_server.arg("ap_ssid");
     String ap_pass    = m_server.arg("ap_pass");
     bool demo_mode    = (m_server.arg("demo_mode") == "true" || m_server.arg("demo_mode") == "1");
 
     ConfigMgr.updateFromParams(press_unit, temp_unit, min_psi, max_psi, max_temp, min_batt,
-                              sda_pin, scl_pin, ap_ssid, ap_pass, demo_mode);
+                              sda_pin, scl_pin, wifi_ssid, wifi_pass, try_sta, ap_ssid, ap_pass, demo_mode);
 
     TreelSensorReceiver.setDemoMode(demo_mode);
 
