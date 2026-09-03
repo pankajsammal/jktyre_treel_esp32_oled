@@ -51,7 +51,7 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
 
     // 1. Top-Left: Position Label (FL, FR, RL, RR)
     m_u8g2.setFont(u8g2_font_7x14B_tr);
-    m_u8g2.drawStr(x + 2, y + 10, posLabel);
+    m_u8g2.drawStr(x + 2, y + 11, posLabel);
 
     // 2. Mid-Left: Temperature (e.g. 27C or 81F)
     char tempBuf[10];
@@ -69,12 +69,12 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     }
 #endif
     m_u8g2.setFont(u8g2_font_5x8_tr);
-    m_u8g2.drawStr(x + 2, y + 19, tempBuf);
+    m_u8g2.drawStr(x + 2, y + 20, tempBuf);
 
     // 3. Bottom-Left: Age (e.g. 50s, 2m, WAIT)
     String ageStr = has_data ? formatAge(tire.last_updated_ms, now_ms) : "WAIT";
     m_u8g2.setFont(u8g2_font_5x8_tr);
-    m_u8g2.drawStr(x + 2, y + 28, ageStr.c_str());
+    m_u8g2.drawStr(x + 2, y + 29, ageStr.c_str());
 
     // 4. Right Side: Big Pressure Digits (e.g. 33, 2.2, or 220)
     char psiBuf[10] = "--";
@@ -101,7 +101,7 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     int psiWidth = m_u8g2.getStrWidth(psiBuf);
     int psiX = x + 62 - psiWidth;
     if (psiX < x + 24) psiX = x + 24;
-    m_u8g2.drawStr(psiX, y + 21, psiBuf);
+    m_u8g2.drawStr(psiX, y + 22, psiBuf);
 
     // 5. Bottom-Right: Small Unit Label (PSI / BAR / KPA)
     m_u8g2.setFont(u8g2_font_4x6_tr);
