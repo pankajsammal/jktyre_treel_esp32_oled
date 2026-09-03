@@ -113,19 +113,26 @@ Choose the tested sketch corresponding to your hardware:
 
 Edit your Wi-Fi credentials and 4 sensor MAC addresses:
 
-```cpp
-// --- Wi-Fi Settings ---
-const char* WIFI_SSID = "Your_WiFi_SSID";
-const char* WIFI_PASS = "Your_WiFi_Password";
+---
 
-// --- 4 Sensor MAC Whitelist ---
-const char* SENSOR_MACS[4] = {
-    "D2:58:6D:8F:16:10",  // FL: Front Left (Replace with your MAC)
-    "CA:E8:6C:2D:92:15",  // FR: Front Right (Replace with your MAC)
-    "F7:FC:85:AD:35:E2",  // RL: Rear Left (Replace with your MAC)
-    "CD:8D:E6:9E:FB:E6"   // RR: Rear Right (Replace with your MAC)
-};
-```
+## ⚙️ Central Configuration Guide (`Config.h`)
+
+All user settings, units, alert thresholds, hardware pins, and network parameters are centralized in `Config.h` in each firmware directory (`src/esp32_tpms_webserver/Config.h` and `src/esp32_c3_tpms_webserver/Config.h`).
+
+| Configuration Option | Default Value | Description |
+| :--- | :--- | :--- |
+| **`ENABLE_WEBSERVER`** | `true` | Set to `false` to disable Wi-Fi and Web Server (pure ultra-low-power BLE mode) |
+| **`ENABLE_OLED`** | `true` | Set to `false` if running headless without an I2C OLED screen |
+| **`ENABLE_DEMO_MODE`** | `false` | Set to `true` to test OLED & Web Dashboard with simulated dummy values & warnings |
+| **`DISPLAY_PRESSURE_UNIT`** | `UNIT_PSI` | Select OLED pressure unit: `UNIT_PSI` (PSI), `UNIT_BAR` (Bar), or `UNIT_KPA` (kPa) |
+| **`DISPLAY_TEMP_UNIT`** | `UNIT_CELSIUS` | Select OLED temperature unit: `UNIT_CELSIUS` (°C) or `UNIT_FAHRENHEIT` (°F) |
+| **`ALERT_MIN_PSI`** | `26.0f` | Low pressure warning threshold (PSI) |
+| **`ALERT_MAX_PSI`** | `45.0f` | High pressure warning threshold (PSI) |
+| **`ALERT_MAX_TEMP_C`** | `70.0f` | High temperature warning threshold (°C) |
+| **`ALERT_MIN_BATT`** | `15` | Low battery percentage warning threshold (%) |
+| **`WIFI_SSID` / `WIFI_PASS`** | `"Your_WiFi_SSID"` | Your home or vehicle Wi-Fi router credentials |
+| **`AP_SSID` / `AP_PASS`** | `"ESP32_TPMS_..."` | SoftAP fallback SSID and Password |
+| **`SENSOR_MACS`** | `{"D2:58...", ...}` | Whitelist of your 4 TPMS sensor MAC addresses |
 
 ---
 

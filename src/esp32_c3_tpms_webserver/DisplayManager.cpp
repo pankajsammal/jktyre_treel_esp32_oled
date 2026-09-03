@@ -36,13 +36,21 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     m_u8g2.setFont(u8g2_font_7x14B_tr);
     m_u8g2.drawStr(x + 2, y + 10, posLabel);
 
-    // 2. Mid-Left: Temperature (e.g. 27C)
+    // 2. Mid-Left: Temperature (e.g. 27C or 81F)
     char tempBuf[10];
+#if DISPLAY_TEMP_UNIT == UNIT_FAHRENHEIT
+    if (has_data) {
+        snprintf(tempBuf, sizeof(tempBuf), "%.0fF", tire.temperature_f);
+    } else {
+        snprintf(tempBuf, sizeof(tempBuf), "--F");
+    }
+#else
     if (has_data) {
         snprintf(tempBuf, sizeof(tempBuf), "%.0fC", tire.temperature_c);
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "--C");
     }
+#endif
     m_u8g2.setFont(u8g2_font_5x8_tr);
     m_u8g2.drawStr(x + 2, y + 19, tempBuf);
 
@@ -57,8 +65,22 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     m_u8g2.setFont(u8g2_font_5x8_tr);
     m_u8g2.drawStr(x + 2, y + 28, ageBuf);
 
-    // 4. Right Side: Big Pressure Digits (e.g. 33)
+    // 4. Right Side: Big Pressure Digits (e.g. 33, 2.2, or 220)
     char psiBuf[10] = "--";
+    const char* unitLabel = "PSI";
+
+#if DISPLAY_PRESSURE_UNIT == UNIT_BAR
+    unitLabel = "BAR";
+    if (has_data) {
+        snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_bar);
+    }
+#elif DISPLAY_PRESSURE_UNIT == UNIT_KPA
+    unitLabel = "KPA";
+    if (has_data) {
+        snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
+    }
+#else // UNIT_PSI (Default)
+    unitLabel = "PSI";
     if (has_data) {
         if (tire.pressure_psi == (float)(int)tire.pressure_psi) {
             snprintf(psiBuf, sizeof(psiBuf), "%d", (int)tire.pressure_psi);
@@ -66,15 +88,18 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
             snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_psi);
         }
     }
+#endif
+
     m_u8g2.setFont(u8g2_font_logisoso20_tn);
     int psiWidth = m_u8g2.getStrWidth(psiBuf);
     int psiX = x + 62 - psiWidth;
     if (psiX < x + 24) psiX = x + 24;
     m_u8g2.drawStr(psiX, y + 20, psiBuf);
 
-    // 5. Bottom-Right: Small Unit (PSI)
+    // 5. Bottom-Right: Small Unit Label (PSI / BAR / KPA)
     m_u8g2.setFont(u8g2_font_4x6_tr);
-    m_u8g2.drawStr(x + 48, y + 30, "PSI");
+    int unitW = m_u8g2.getStrWidth(unitLabel);
+    m_u8g2.drawStr(x + 62 - unitW, y + 30, unitLabel);
 }
 
 void DisplayManager::render(const TireData tires[4]) {

@@ -4,34 +4,65 @@
 #include <Arduino.h>
 
 // =====================================================================
-// HARDWARE PIN CONFIGURATION & FEATURE SWITCHES
+// ⚙️ CENTRAL USER CONFIGURATION FILE
 // =====================================================================
+// Edit your Wi-Fi credentials, sensor MACs, alert thresholds, hardware
+// pins, display units, and feature switches below.
+// =====================================================================
+
+// ---------------------------------------------------------------------
+// 1. FEATURE & TEST MODE SWITCHES
+// ---------------------------------------------------------------------
 #define ENABLE_WEBSERVER     true   // Set to false to disable Wi-Fi & Web Server completely
-#define ENABLE_OLED          true   // Set to false if running headless without OLED
-#define ENABLE_DEMO_MODE     false  // Set to true to test OLED, Web Dashboard & REST API with dummy values & alerts
+#define ENABLE_OLED          true   // Set to false if running headless without OLED display
+#define ENABLE_DEMO_MODE     false  // Set to true to test OLED & Web Server with dummy values & warnings
 
-#define OLED_SDA_PIN         14     // ESP32 GPIO 14
-#define OLED_SCL_PIN         27     // ESP32 GPIO 27
-#define OLED_VCC_PIN         -1     // Wire to dedicated 3.3V pin
-#define USE_SH1106_1_3_INCH  1      // 1 for 1.3" SH1106, 0 for 0.96" SSD1306
+// ---------------------------------------------------------------------
+// 2. DISPLAY UNIT PREFERENCES (OLED Display)
+// ---------------------------------------------------------------------
+#define UNIT_PSI             0      // Pressure in PSI (e.g. 32 PSI)
+#define UNIT_BAR             1      // Pressure in Bar (e.g. 2.2 Bar)
+#define UNIT_KPA             2      // Pressure in kPa (e.g. 220 kPa)
 
-// =====================================================================
-// WI-FI CONFIGURATION
-// =====================================================================
+#define UNIT_CELSIUS         0      // Temperature in Celsius (°C)
+#define UNIT_FAHRENHEIT      1      // Temperature in Fahrenheit (°F)
+
+#define DISPLAY_PRESSURE_UNIT UNIT_PSI      // Selected pressure unit: UNIT_PSI, UNIT_BAR, or UNIT_KPA
+#define DISPLAY_TEMP_UNIT     UNIT_CELSIUS  // Selected temperature unit: UNIT_CELSIUS or UNIT_FAHRENHEIT
+
+// ---------------------------------------------------------------------
+// 3. ALERT & WARNING THRESHOLDS
+// ---------------------------------------------------------------------
+#define ALERT_MIN_PSI        26.0f  // Trigger Low Pressure alert if pressure drops below this (PSI)
+#define ALERT_MAX_PSI        45.0f  // Trigger High Pressure alert if pressure rises above this (PSI)
+#define ALERT_MAX_TEMP_C     70.0f  // Trigger High Temperature alert if temp exceeds this (°C)
+#define ALERT_MIN_BATT       15     // Trigger Low Battery alert if battery drops below this (%)
+
+// ---------------------------------------------------------------------
+// 4. HARDWARE PINOUT (Standard ESP32 30-Pin / 38-Pin DevKit)
+// ---------------------------------------------------------------------
+#define OLED_SDA_PIN         14     // ESP32 I2C SDA Pin
+#define OLED_SCL_PIN         27     // ESP32 I2C SCL Pin
+#define OLED_VCC_PIN         -1     // Dedicated VCC pin (-1 if wired directly to 3.3V)
+#define USE_SH1106_1_3_INCH  1      // 1 for 1.3" SH1106 display, 0 for 0.96" SSD1306 display
+
+// ---------------------------------------------------------------------
+// 5. WI-FI NETWORK CONFIGURATION
+// ---------------------------------------------------------------------
 #if ENABLE_WEBSERVER
-const char* const WIFI_SSID     = "Your_WiFi_SSID";     // Replace with your home/car Wi-Fi SSID
-const char* const WIFI_PASS     = "Your_WiFi_Password"; // Replace with your Wi-Fi Password
-const bool        TRY_STA_FIRST = true;                  // Try connecting to Wi-Fi first
-const int         STA_TIMEOUT_S = 10;                    // Seconds before falling back to AP
+const char* const WIFI_SSID     = "Your_WiFi_SSID";     // Your home or vehicle Wi-Fi router SSID
+const char* const WIFI_PASS     = "Your_WiFi_Password"; // Your Wi-Fi password
+const bool        TRY_STA_FIRST = true;                  // Connect to router Wi-Fi first
+const int         STA_TIMEOUT_S = 10;                    // Seconds to wait before starting SoftAP fallback
 
-// Fallback Access Point (AP) Settings
+// Fallback Access Point (AP) Settings (used if Wi-Fi router is unreachable)
 const char* const AP_SSID       = "ESP32_TPMS_Dashboard";
-const char* const AP_PASS       = "12345678";            // Minimum 8 chars
+const char* const AP_PASS       = "12345678";            // AP password (minimum 8 characters)
 #endif
 
-// =====================================================================
-// SENSOR WHITELIST
-// =====================================================================
+// ---------------------------------------------------------------------
+// 6. SENSOR WHITELIST & MAC ADDRESSES
+// ---------------------------------------------------------------------
 // IMPORTANT: Replace these MAC addresses and 6-character Short IDs with your own TPMS sensor MACs!
 // Find your MAC addresses in the official JK Tyre SmartTyre app under Settings -> Sensor Debug.
 const char* const SENSOR_MACS[4] = {
@@ -42,7 +73,7 @@ const char* const SENSOR_MACS[4] = {
 };
 
 const char* const SENSOR_SHORT_IDS[4] = {
-    "8F1610",  // FL Short ID
+    "8F1610",  // FL Short ID (Last 6 characters of Forward MAC)
     "2D9215",  // FR Short ID
     "AD35E2",  // RL Short ID
     "9EFBE6"   // RR Short ID
