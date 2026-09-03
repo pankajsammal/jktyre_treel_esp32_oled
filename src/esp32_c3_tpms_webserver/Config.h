@@ -27,8 +27,8 @@
 #define UNIT_CELSIUS         0      // Temperature in Celsius (°C)
 #define UNIT_FAHRENHEIT      1      // Temperature in Fahrenheit (°F)
 
-#define DISPLAY_PRESSURE_UNIT UNIT_PSI      // Selected pressure unit: UNIT_PSI, UNIT_BAR, or UNIT_KPA
-#define DISPLAY_TEMP_UNIT     UNIT_CELSIUS  // Selected temperature unit: UNIT_CELSIUS or UNIT_FAHRENHEIT
+#define DISPLAY_PRESSURE_UNIT UNIT_KPA      // Selected pressure unit: UNIT_PSI, UNIT_BAR, or UNIT_KPA
+#define DISPLAY_TEMP_UNIT     UNIT_FAHRENHEIT  // Selected temperature unit: UNIT_CELSIUS or UNIT_FAHRENHEIT
 
 // ---------------------------------------------------------------------
 // 3. ALERT & WARNING THRESHOLDS

@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include <TreelTPMS.h>
 #include "Config.h"
+#include "ConfigManager.h"
 #include "Logger.h"
 #include "DisplayManager.h"
 #include "WebServerManager.h"
@@ -28,6 +29,9 @@ void setup() {
     Serial.println("  ESP32-C3 SuperMini Treel TPMS Receiver + Web Server  ");
     Serial.println("=======================================================");
 
+    // 0. Load Dynamic Settings from NVS Flash
+    ConfigMgr.begin();
+
     // 1. Initialize Display (if enabled)
     Display.begin();
 
@@ -35,7 +39,7 @@ void setup() {
     WebDash.begin();
 
     // 3. Start Zero-Allocation NimBLE Scanner
-    if (ENABLE_DEMO_MODE) {
+    if (ConfigMgr.enable_demo_mode) {
         TreelSensorReceiverC3.setDemoMode(true);
         Logger.addLog("[DEMO] Test Mode ENABLED! Simulating live telemetry & warnings.");
     }

@@ -1,4 +1,5 @@
 #include "WebServerManager.h"
+#include "ConfigManager.h"
 
 WebServerManager WebDash;
 
@@ -20,6 +21,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             --cyan: #38bdf8;
             --green: #10b981;
             --red: #ef4444;
+            --accent: #0284c7;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -34,6 +36,11 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         header { text-align: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
         h1 { color: var(--cyan); font-size: 1.5rem; }
         .meta { font-size: 0.82rem; color: var(--muted); margin-top: 6px; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+        .nav-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+        .tab-btn { background: #1e293b; color: var(--muted); border: 1px solid var(--border); padding: 8px 18px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--cyan); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
         @media (max-width: 550px) { .grid { grid-template-columns: 1fr; } }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
@@ -50,11 +57,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .details { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 0.82rem; }
         .details span { color: var(--muted); font-size: 0.72rem; display: block; }
         .card-foot { margin-top: 8px; font-size: 0.72rem; color: #64748b; display: flex; justify-content: space-between; }
-        .log-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+        .log-box, .settings-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
         .log-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .log-head h3 { font-size: 0.92rem; color: var(--cyan); }
+        .log-head h3, .settings-section h3 { font-size: 0.95rem; color: var(--cyan); margin-bottom: 12px; }
         .term { background: #050811; border: 1px solid var(--border); border-radius: 6px; padding: 8px; height: 160px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: #38bdf8; line-height: 1.35; }
-        .btn { background: #0284c7; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; cursor: pointer; }
+        .btn { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+        .btn-sm { padding: 3px 8px; font-size: 0.72rem; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 550px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; background: #0a0f1d; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 6px; font-size: 0.85rem; }
+        .form-group.checkbox { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+        .form-group.checkbox input { width: auto; }
+        .toast { display: none; background: var(--green); color: #000; padding: 10px; border-radius: 6px; font-weight: 700; text-align: center; margin-bottom: 12px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -70,20 +86,104 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             </div>
         </header>
 
-        <div class="grid">
-            <div class="card" id="c-FL"><div class="card-top"><span class="pos">FL - Front Left</span><span class="badge" id="b-FL">WAITING</span></div><div class="hero"><div class="psi" id="p-FL">--</div><div class="unit">PSI</div><div class="bar" id="bar-FL">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-FL">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-FL">--%</strong></div><div><span>MODE / ID</span><strong id="m-FL">--</strong></div><div><span>SIGNAL</span><strong id="r-FL">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-FL">Never</span></div></div>
-            <div class="card" id="c-FR"><div class="card-top"><span class="pos">FR - Front Right</span><span class="badge" id="b-FR">WAITING</span></div><div class="hero"><div class="psi" id="p-FR">--</div><div class="unit">PSI</div><div class="bar" id="bar-FR">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-FR">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-FR">--%</strong></div><div><span>MODE / ID</span><strong id="m-FR">--</strong></div><div><span>SIGNAL</span><strong id="r-FR">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-FR">Never</span></div></div>
-            <div class="card" id="c-RL"><div class="card-top"><span class="pos">RL - Rear Left</span><span class="badge" id="b-RL">WAITING</span></div><div class="hero"><div class="psi" id="p-RL">--</div><div class="unit">PSI</div><div class="bar" id="bar-RL">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-RL">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-RL">--%</strong></div><div><span>MODE / ID</span><strong id="m-RL">--</strong></div><div><span>SIGNAL</span><strong id="r-RL">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-RL">Never</span></div></div>
-            <div class="card" id="c-RR"><div class="card-top"><span class="pos">RR - Rear Right</span><span class="badge" id="b-RR">WAITING</span></div><div class="hero"><div class="psi" id="p-RR">--</div><div class="unit">PSI</div><div class="bar" id="bar-RR">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-RR">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-RR">--%</strong></div><div><span>MODE / ID</span><strong id="m-RR">--</strong></div><div><span>SIGNAL</span><strong id="r-RR">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-RR">Never</span></div></div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('dash')">📱 Live Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('set')">⚙️ System Settings</button>
         </div>
 
-        <div class="log-box">
-            <div class="log-head"><h3>Live BLE Telemetry Stream</h3><button class="btn" onclick="fetch('/api/clear')">Clear</button></div>
-            <div class="term" id="term">Connecting...</div>
+        <div id="tab-dash" class="tab-content active">
+            <div class="grid">
+                <div class="card" id="c-FL"><div class="card-top"><span class="pos">FL - Front Left</span><span class="badge" id="b-FL">WAITING</span></div><div class="hero"><div class="psi" id="p-FL">--</div><div class="unit">PSI</div><div class="bar" id="bar-FL">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-FL">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-FL">--%</strong></div><div><span>MODE / ID</span><strong id="m-FL">--</strong></div><div><span>SIGNAL</span><strong id="r-FL">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-FL">Never</span></div></div>
+                <div class="card" id="c-FR"><div class="card-top"><span class="pos">FR - Front Right</span><span class="badge" id="b-FR">WAITING</span></div><div class="hero"><div class="psi" id="p-FR">--</div><div class="unit">PSI</div><div class="bar" id="bar-FR">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-FR">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-FR">--%</strong></div><div><span>MODE / ID</span><strong id="m-FR">--</strong></div><div><span>SIGNAL</span><strong id="r-FR">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-FR">Never</span></div></div>
+                <div class="card" id="c-RL"><div class="card-top"><span class="pos">RL - Rear Left</span><span class="badge" id="b-RL">WAITING</span></div><div class="hero"><div class="psi" id="p-RL">--</div><div class="unit">PSI</div><div class="bar" id="bar-RL">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-RL">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-RL">--%</strong></div><div><span>MODE / ID</span><strong id="m-RL">--</strong></div><div><span>SIGNAL</span><strong id="r-RL">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-RL">Never</span></div></div>
+                <div class="card" id="c-RR"><div class="card-top"><span class="pos">RR - Rear Right</span><span class="badge" id="b-RR">WAITING</span></div><div class="hero"><div class="psi" id="p-RR">--</div><div class="unit">PSI</div><div class="bar" id="bar-RR">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-RR">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-RR">--%</strong></div><div><span>MODE / ID</span><strong id="m-RR">--</strong></div><div><span>SIGNAL</span><strong id="r-RR">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-RR">Never</span></div></div>
+            </div>
+
+            <div class="log-box">
+                <div class="log-head"><h3>Live BLE Telemetry Stream</h3><button class="btn btn-sm" onclick="fetch('/api/clear')">Clear</button></div>
+                <div class="term" id="term">Connecting...</div>
+            </div>
+        </div>
+
+        <div id="tab-set" class="tab-content">
+            <div class="settings-section">
+                <h3>⚙️ ESP32-C3 System Preferences (Saved to NVS Flash)</h3>
+                <div id="toast" class="toast">Settings Saved Successfully!</div>
+                <form id="set-form" onsubmit="saveSettings(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>OLED Pressure Display Unit</label>
+                            <select id="cfg-press-unit">
+                                <option value="0">PSI (PSI)</option>
+                                <option value="1">BAR (Bar)</option>
+                                <option value="2">KPA (kPa)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>OLED Temperature Unit</label>
+                            <select id="cfg-temp-unit">
+                                <option value="0">Celsius (&deg;C)</option>
+                                <option value="1">Fahrenheit (&deg;F)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Low Pressure Alert (PSI)</label>
+                            <input type="number" step="0.5" id="cfg-min-psi">
+                        </div>
+                        <div class="form-group">
+                            <label>High Pressure Alert (PSI)</label>
+                            <input type="number" step="0.5" id="cfg-max-psi">
+                        </div>
+                        <div class="form-group">
+                            <label>High Temp Alert (&deg;C)</label>
+                            <input type="number" step="1" id="cfg-max-temp">
+                        </div>
+                        <div class="form-group">
+                            <label>Low Battery Alert (%)</label>
+                            <input type="number" step="1" id="cfg-min-batt">
+                        </div>
+                        <div class="form-group">
+                            <label>OLED SDA Pin (GPIO)</label>
+                            <input type="number" id="cfg-sda-pin">
+                        </div>
+                        <div class="form-group">
+                            <label>OLED SCL Pin (GPIO)</label>
+                            <input type="number" id="cfg-scl-pin">
+                        </div>
+                        <div class="form-group">
+                            <label>SoftAP Wi-Fi SSID</label>
+                            <input type="text" id="cfg-ap-ssid">
+                        </div>
+                        <div class="form-group">
+                            <label>SoftAP Wi-Fi Password (min 8 chars)</label>
+                            <input type="password" id="cfg-ap-pass">
+                        </div>
+                    </div>
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="cfg-demo-mode">
+                        <label for="cfg-demo-mode"><strong>Enable Test / Demo Mode</strong> (Simulates live tire readings & alerts)</label>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <button type="submit" class="btn">💾 Save & Apply Settings</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (name === 'dash') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('tab-dash').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('tab-set').classList.add('active');
+                loadSettings();
+            }
+        }
         function fmtAge(s) { if (s < 0) return "Never"; if (s < 60) return s + "s ago"; if (s < 3600) return Math.floor(s / 60) + "m ago"; return Math.floor(s / 3600) + "h ago"; }
         async function poll() {
             try {
@@ -118,6 +218,47 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 term.scrollTop = term.scrollHeight;
             } catch(e) {}
         }
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/settings'); if (!res.ok) return; const s = await res.json();
+                document.getElementById('cfg-press-unit').value = s.press_unit;
+                document.getElementById('cfg-temp-unit').value = s.temp_unit;
+                document.getElementById('cfg-min-psi').value = s.min_psi;
+                document.getElementById('cfg-max-psi').value = s.max_psi;
+                document.getElementById('cfg-max-temp').value = s.max_temp;
+                document.getElementById('cfg-min-batt').value = s.min_batt;
+                document.getElementById('cfg-sda-pin').value = s.sda_pin;
+                document.getElementById('cfg-scl-pin').value = s.scl_pin;
+                document.getElementById('cfg-ap-ssid').value = s.ap_ssid;
+                document.getElementById('cfg-ap-pass').value = s.ap_pass;
+                document.getElementById('cfg-demo-mode').checked = s.demo_mode;
+            } catch (e) {}
+        }
+        async function saveSettings(e) {
+            e.preventDefault();
+            const body = new URLSearchParams({
+                press_unit: document.getElementById('cfg-press-unit').value,
+                temp_unit: document.getElementById('cfg-temp-unit').value,
+                min_psi: document.getElementById('cfg-min-psi').value,
+                max_psi: document.getElementById('cfg-max-psi').value,
+                max_temp: document.getElementById('cfg-max-temp').value,
+                min_batt: document.getElementById('cfg-min-batt').value,
+                sda_pin: document.getElementById('cfg-sda-pin').value,
+                scl_pin: document.getElementById('cfg-scl-pin').value,
+                ap_ssid: document.getElementById('cfg-ap-ssid').value,
+                ap_pass: document.getElementById('cfg-ap-pass').value,
+                demo_mode: document.getElementById('cfg-demo-mode').checked ? 'true' : 'false'
+            });
+            try {
+                const res = await fetch('/api/settings', { method: 'POST', body });
+                if (res.ok) {
+                    const t = document.getElementById('toast');
+                    t.style.display = 'block';
+                    setTimeout(() => t.style.display = 'none', 3000);
+                }
+            } catch (e) {}
+        }
+        async function clearLogs() { await fetch('/api/clear'); fetchLogs(); }
         setInterval(poll, 1000); setInterval(pollLogs, 2000); poll(); pollLogs();
     </script>
 </body>
@@ -157,9 +298,9 @@ void WebServerManager::begin() {
 
     if (!staConnected) {
         WiFi.mode(WIFI_AP);
-        WiFi.softAP(AP_SSID, AP_PASS);
+        WiFi.softAP(ConfigMgr.ap_ssid.c_str(), ConfigMgr.ap_pass.c_str());
         m_ipAddress = WiFi.softAPIP().toString();
-        m_wifiModeStr = "AP (" + String(AP_SSID) + ")";
+        m_wifiModeStr = "AP (" + ConfigMgr.ap_ssid + ")";
         Logger.addLog("[Wi-Fi] SoftAP active! URL: http://%s", m_ipAddress.c_str());
     }
 
@@ -167,6 +308,9 @@ void WebServerManager::begin() {
     m_server.on("/api/data", HTTP_GET, [this]() { handleApiData(); });
     m_server.on("/api/logs", HTTP_GET, [this]() { handleApiLogs(); });
     m_server.on("/api/clear", HTTP_GET, [this]() { handleApiClear(); });
+    m_server.on("/api/settings", HTTP_GET, [this]() { handleGetSettings(); });
+    m_server.on("/api/settings", HTTP_POST, [this]() { handlePostSettings(); });
+
     m_server.begin();
     Logger.addLog("[HTTP] Web Server started on port 80");
 #else
@@ -184,6 +328,36 @@ void WebServerManager::handleClient() {
 void WebServerManager::handleRoot() {
 #if ENABLE_WEBSERVER
     m_server.send(200, "text/html", INDEX_HTML);
+#endif
+}
+
+void WebServerManager::handleGetSettings() {
+#if ENABLE_WEBSERVER
+    m_server.send(200, "application/json", ConfigMgr.getSettingsJson());
+#endif
+}
+
+void WebServerManager::handlePostSettings() {
+#if ENABLE_WEBSERVER
+    String press_unit = m_server.arg("press_unit");
+    String temp_unit  = m_server.arg("temp_unit");
+    float min_psi     = m_server.arg("min_psi").toFloat();
+    float max_psi     = m_server.arg("max_psi").toFloat();
+    float max_temp    = m_server.arg("max_temp").toFloat();
+    int min_batt      = m_server.arg("min_batt").toInt();
+    int sda_pin       = m_server.arg("sda_pin").toInt();
+    int scl_pin       = m_server.arg("scl_pin").toInt();
+    String ap_ssid    = m_server.arg("ap_ssid");
+    String ap_pass    = m_server.arg("ap_pass");
+    bool demo_mode    = (m_server.arg("demo_mode") == "true" || m_server.arg("demo_mode") == "1");
+
+    ConfigMgr.updateFromParams(press_unit, temp_unit, min_psi, max_psi, max_temp, min_batt,
+                              sda_pin, scl_pin, ap_ssid, ap_pass, demo_mode);
+
+    TreelSensorReceiverC3.setDemoMode(demo_mode);
+
+    Logger.addLog("[SETTINGS] Settings updated via Web UI & saved to NVS!");
+    m_server.send(200, "application/json", "{\"status\":\"OK\"}");
 #endif
 }
 
@@ -218,7 +392,7 @@ void WebServerManager::handleApiData() {
         json += "\"bat\":" + String(t.battery_percent) + ",";
         json += "\"rssi\":" + String(t.rssi) + ",";
         json += "\"mode\":\"" + String(t.mode) + "\",";
-        json += "\"alt\":\"" + String(t.getAlertString()) + "\",";
+        json += "\"alt\":\"" + String(t.getAlertString(ConfigMgr.alert_min_psi, ConfigMgr.alert_max_psi, ConfigMgr.alert_max_temp_c, ConfigMgr.alert_min_batt)) + "\",";
         json += "\"age\":" + String(ageS);
         json += "}";
         if (i < 3) json += ",";

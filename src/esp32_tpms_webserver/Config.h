@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // =====================================================================
-// ⚙️ CENTRAL USER CONFIGURATION FILE
+// CENTRAL USER CONFIGURATION FILE
 // =====================================================================
 // Edit your Wi-Fi credentials, sensor MACs, alert thresholds, hardware
 // pins, display units, and feature switches below.

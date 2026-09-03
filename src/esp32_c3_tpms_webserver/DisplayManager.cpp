@@ -1,4 +1,5 @@
 #include "DisplayManager.h"
+#include "ConfigManager.h"
 
 DisplayManager Display;
 
@@ -6,7 +7,7 @@ DisplayManager::DisplayManager() : m_u8g2(U8G2_R0, U8X8_PIN_NONE, OLED_SCL_PIN, 
 
 void DisplayManager::begin() {
     if (!ENABLE_OLED) return;
-    Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
+    Wire.begin(ConfigMgr.oled_sda_pin, ConfigMgr.oled_scl_pin);
     m_u8g2.begin();
     m_u8g2.clearBuffer();
     m_u8g2.setFont(u8g2_font_7x14B_tr);
@@ -21,7 +22,7 @@ void DisplayManager::begin() {
 
 void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int x, int y, uint32_t now_ms) {
     bool has_data = tire.has_received;
-    AlertState alert = tire.getAlertState();
+    AlertState alert = tire.getAlertState(ConfigMgr.alert_min_psi, ConfigMgr.alert_max_psi, ConfigMgr.alert_max_temp_c, ConfigMgr.alert_min_batt);
     bool is_alert = has_data && (alert != ALERT_NORMAL && alert != ALERT_WAITING);
 
     if (is_alert) {
@@ -38,19 +39,13 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
 
     // 2. Mid-Left: Temperature (e.g. 27C or 81F)
     char tempBuf[10];
-#if DISPLAY_TEMP_UNIT == UNIT_FAHRENHEIT
-    if (has_data) {
-        snprintf(tempBuf, sizeof(tempBuf), "%.0fF", tire.temperature_f);
+    if (ConfigMgr.display_temp_unit == UNIT_FAHRENHEIT) {
+        if (has_data) snprintf(tempBuf, sizeof(tempBuf), "%.0fF", tire.temperature_f);
+        else snprintf(tempBuf, sizeof(tempBuf), "--F");
     } else {
-        snprintf(tempBuf, sizeof(tempBuf), "--F");
+        if (has_data) snprintf(tempBuf, sizeof(tempBuf), "%.0fC", tire.temperature_c);
+        else snprintf(tempBuf, sizeof(tempBuf), "--C");
     }
-#else
-    if (has_data) {
-        snprintf(tempBuf, sizeof(tempBuf), "%.0fC", tire.temperature_c);
-    } else {
-        snprintf(tempBuf, sizeof(tempBuf), "--C");
-    }
-#endif
     m_u8g2.setFont(u8g2_font_5x8_tr);
     m_u8g2.drawStr(x + 2, y + 20, tempBuf);
 
@@ -65,26 +60,20 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     m_u8g2.setFont(u8g2_font_5x8_tr);
     m_u8g2.drawStr(x + 2, y + 29, ageBuf);
 
-    // 4. Right Side: Big Pressure Digits (e.g. 33, 2.2, or 220)
+    // 4. Right Side: Big Pressure Digits (e.g. 33, 2.2, or 225)
     char psiBuf[10] = "--";
     const char* unitLabel = "PSI";
 
-#if DISPLAY_PRESSURE_UNIT == UNIT_BAR
-    unitLabel = "BAR";
-    if (has_data) {
-        snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_bar);
+    if (ConfigMgr.display_pressure_unit == UNIT_BAR) {
+        unitLabel = "BAR";
+        if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_bar);
+    } else if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
+        unitLabel = "KPA";
+        if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
+    } else { // UNIT_PSI
+        unitLabel = "PSI";
+        if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%d", (int)roundf(tire.pressure_psi));
     }
-#elif DISPLAY_PRESSURE_UNIT == UNIT_KPA
-    unitLabel = "KPA";
-    if (has_data) {
-        snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
-    }
-#else // UNIT_PSI (Default: No Decimal)
-    unitLabel = "PSI";
-    if (has_data) {
-        snprintf(psiBuf, sizeof(psiBuf), "%d", (int)roundf(tire.pressure_psi));
-    }
-#endif
 
     m_u8g2.setFont(u8g2_font_logisoso20_tn);
     int psiWidth = m_u8g2.getStrWidth(psiBuf);

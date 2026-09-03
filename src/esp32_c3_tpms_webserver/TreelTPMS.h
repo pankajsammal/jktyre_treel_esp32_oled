@@ -57,17 +57,17 @@ struct TireData {
         has_received = true;
     }
 
-    AlertState getAlertState() const {
+    AlertState getAlertState(float minPsi = ALERT_MIN_PSI, float maxPsi = ALERT_MAX_PSI, float maxTempC = ALERT_MAX_TEMP_C, int minBatt = ALERT_MIN_BATT) const {
         if (!has_received) return ALERT_WAITING;
-        if (pressure_psi < ALERT_MIN_PSI) return ALERT_LOW_PRESSURE;
-        if (pressure_psi > ALERT_MAX_PSI) return ALERT_HIGH_PRESSURE;
-        if (temperature_c > ALERT_MAX_TEMP_C) return ALERT_HIGH_TEMP;
-        if (battery_percent >= 0 && battery_percent < ALERT_MIN_BATT) return ALERT_LOW_BATT;
+        if (pressure_psi < minPsi) return ALERT_LOW_PRESSURE;
+        if (pressure_psi > maxPsi) return ALERT_HIGH_PRESSURE;
+        if (temperature_c > maxTempC) return ALERT_HIGH_TEMP;
+        if (battery_percent >= 0 && battery_percent < minBatt) return ALERT_LOW_BATT;
         return ALERT_NORMAL;
     }
 
-    const char* getAlertString() const {
-        switch (getAlertState()) {
+    const char* getAlertString(float minPsi = ALERT_MIN_PSI, float maxPsi = ALERT_MAX_PSI, float maxTempC = ALERT_MAX_TEMP_C, int minBatt = ALERT_MIN_BATT) const {
+        switch (getAlertState(minPsi, maxPsi, maxTempC, minBatt)) {
             case ALERT_LOW_PRESSURE:  return "LOW_PRESSURE";
             case ALERT_HIGH_PRESSURE: return "HIGH_PRESSURE";
             case ALERT_HIGH_TEMP:     return "HIGH_TEMP";

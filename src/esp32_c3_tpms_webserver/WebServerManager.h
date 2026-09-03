@@ -30,6 +30,8 @@ private:
     void handleApiData();
     void handleApiLogs();
     void handleApiClear();
+    void handleGetSettings();
+    void handlePostSettings();
 };
 
 extern WebServerManager WebDash;

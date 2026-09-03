@@ -1,4 +1,5 @@
 #include "WebServerManager.h"
+#include "ConfigManager.h"
 
 WebServerManager WebDash;
 
@@ -20,7 +21,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             --accent: #0284c7;
             --accent-cyan: #38bdf8;
             --alert-red: #ef4444;
-            --alert-yellow: #f59e0b;
             --alert-green: #10b981;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,12 +33,17 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             justify-content: center;
         }
         .container { width: 100%; max-width: 900px; }
-        header { text-align: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--card-border); }
-        h1 { color: var(--accent-cyan); font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; }
+        header { text-align: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--card-border); }
+        h1 { color: var(--accent-cyan); font-size: 1.6rem; font-weight: 700; }
         .meta-bar { margin-top: 6px; font-size: 0.85rem; color: var(--text-dim); display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+        .nav-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+        .tab-btn { background: #1e293b; color: var(--text-dim); border: 1px solid var(--card-border); padding: 8px 18px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent-cyan); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
         @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: border-color 0.3s ease; }
+        .card { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         .card.alert-low, .card.alert-high, .card.alert-temp { border-color: var(--alert-red); box-shadow: 0 0 16px rgba(239, 68, 68, 0.25); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .pos-title { font-size: 1.1rem; font-weight: 700; color: var(--accent-cyan); }
@@ -53,12 +58,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .metric-item span { color: var(--text-dim); font-size: 0.75rem; display: block; }
         .metric-item strong { color: #f1f5f9; font-size: 0.95rem; }
         .card-footer { margin-top: 10px; font-size: 0.75rem; color: #64748b; display: flex; justify-content: space-between; }
-        .logs-section { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; }
+        .logs-section, .settings-section { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
         .logs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .logs-header h3 { font-size: 1rem; color: var(--accent-cyan); }
+        .logs-header h3, .settings-section h3 { font-size: 1.05rem; color: var(--accent-cyan); margin-bottom: 12px; }
         .terminal { background: #060911; border: 1px solid #1e293b; border-radius: 6px; padding: 10px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 0.78rem; color: #38bdf8; line-height: 1.4; }
-        .terminal div { margin-bottom: 2px; }
-        .btn { background: var(--accent); color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+        .btn { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+        .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; background: #0a0f1d; border: 1px solid var(--card-border); color: #fff; padding: 8px; border-radius: 6px; font-size: 0.85rem; }
+        .form-group.checkbox { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+        .form-group.checkbox input { width: auto; }
+        .toast { display: none; background: var(--alert-green); color: #000; padding: 10px; border-radius: 6px; font-weight: 700; text-align: center; margin-bottom: 12px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -72,18 +85,104 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 <span>Total Packets: <strong id="total-pkts">0</strong></span>
             </div>
         </header>
-        <div class="grid">
-            <div class="card" id="card-FL"><div class="card-header"><span class="pos-title">FL - Front Left</span><span class="status-badge" id="badge-FL">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-FL">--</div><div class="press-unit">PSI</div><div class="press-bar" id="bar-FL">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-FL">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-FL">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-FL">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-FL">-- dBm</strong></div></div><div class="card-footer"><span id="mac-FL">MAC: Configured</span><span id="age-FL">Last: Never</span></div></div>
-            <div class="card" id="card-FR"><div class="card-header"><span class="pos-title">FR - Front Right</span><span class="status-badge" id="badge-FR">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-FR">--</div><div class="press-unit">PSI</div><div class="press-bar" id="bar-FR">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-FR">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-FR">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-FR">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-FR">-- dBm</strong></div></div><div class="card-footer"><span id="mac-FR">MAC: Configured</span><span id="age-FR">Last: Never</span></div></div>
-            <div class="card" id="card-RL"><div class="card-header"><span class="pos-title">RL - Rear Left</span><span class="status-badge" id="badge-RL">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-RL">--</div><div class="press-unit">PSI</div><div class="press-bar" id="bar-RL">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-RL">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-RL">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-RL">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-RL">-- dBm</strong></div></div><div class="card-footer"><span id="mac-RL">MAC: Configured</span><span id="age-RL">Last: Never</span></div></div>
-            <div class="card" id="card-RR"><div class="card-header"><span class="pos-title">RR - Rear Right</span><span class="status-badge" id="badge-RR">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-RR">--</div><div class="press-unit">PSI</div><div class="press-bar" id="bar-RR">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-RR">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-RR">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-RR">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-RR">-- dBm</strong></div></div><div class="card-footer"><span id="mac-RR">MAC: Configured</span><span id="age-RR">Last: Never</span></div></div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('dash')">📱 Live Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('set')">⚙️ System Settings</button>
         </div>
-        <div class="logs-section">
-            <div class="logs-header"><h3>Live BLE Packet Stream</h3><button class="btn" onclick="clearLogs()">Clear</button></div>
-            <div class="terminal" id="terminal">Loading telemetry stream...</div>
+
+        <div id="tab-dash" class="tab-content active">
+            <div class="grid">
+                <div class="card" id="card-FL"><div class="card-header"><span class="pos-title">FL - Front Left</span><span class="status-badge" id="badge-FL">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-FL">--</div><div class="press-unit" id="unit-FL">PSI</div><div class="press-bar" id="bar-FL">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-FL">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-FL">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-FL">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-FL">-- dBm</strong></div></div><div class="card-footer"><span id="mac-FL">MAC: Configured</span><span id="age-FL">Last: Never</span></div></div>
+                <div class="card" id="card-FR"><div class="card-header"><span class="pos-title">FR - Front Right</span><span class="status-badge" id="badge-FR">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-FR">--</div><div class="press-unit" id="unit-FR">PSI</div><div class="press-bar" id="bar-FR">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-FR">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-FR">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-FR">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-FR">-- dBm</strong></div></div><div class="card-footer"><span id="mac-FR">MAC: Configured</span><span id="age-FR">Last: Never</span></div></div>
+                <div class="card" id="card-RL"><div class="card-header"><span class="pos-title">RL - Rear Left</span><span class="status-badge" id="badge-RL">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-RL">--</div><div class="press-unit" id="unit-RL">PSI</div><div class="press-bar" id="bar-RL">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-RL">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-RL">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-RL">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-RL">-- dBm</strong></div></div><div class="card-footer"><span id="mac-RL">MAC: Configured</span><span id="age-RL">Last: Never</span></div></div>
+                <div class="card" id="card-RR"><div class="card-header"><span class="pos-title">RR - Rear Right</span><span class="status-badge" id="badge-RR">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-RR">--</div><div class="press-unit" id="unit-RR">PSI</div><div class="press-bar" id="bar-RR">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-RR">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-RR">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-RR">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-RR">-- dBm</strong></div></div><div class="card-footer"><span id="mac-RR">MAC: Configured</span><span id="age-RR">Last: Never</span></div></div>
+            </div>
+            <div class="logs-section">
+                <div class="logs-header"><h3>Live BLE Packet Stream</h3><button class="btn btn-sm" onclick="clearLogs()">Clear</button></div>
+                <div class="terminal" id="terminal">Loading telemetry stream...</div>
+            </div>
+        </div>
+
+        <div id="tab-set" class="tab-content">
+            <div class="settings-section">
+                <h3>⚙️ System & Alert Preferences (Saved to NVS Flash)</h3>
+                <div id="toast" class="toast">Settings Saved Successfully!</div>
+                <form id="set-form" onsubmit="saveSettings(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>OLED Pressure Display Unit</label>
+                            <select id="cfg-press-unit">
+                                <option value="0">PSI (PSI)</option>
+                                <option value="1">BAR (Bar)</option>
+                                <option value="2">KPA (kPa)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>OLED Temperature Unit</label>
+                            <select id="cfg-temp-unit">
+                                <option value="0">Celsius (&deg;C)</option>
+                                <option value="1">Fahrenheit (&deg;F)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Low Pressure Alert (PSI)</label>
+                            <input type="number" step="0.5" id="cfg-min-psi">
+                        </div>
+                        <div class="form-group">
+                            <label>High Pressure Alert (PSI)</label>
+                            <input type="number" step="0.5" id="cfg-max-psi">
+                        </div>
+                        <div class="form-group">
+                            <label>High Temp Alert (&deg;C)</label>
+                            <input type="number" step="1" id="cfg-max-temp">
+                        </div>
+                        <div class="form-group">
+                            <label>Low Battery Alert (%)</label>
+                            <input type="number" step="1" id="cfg-min-batt">
+                        </div>
+                        <div class="form-group">
+                            <label>OLED SDA Pin (GPIO)</label>
+                            <input type="number" id="cfg-sda-pin">
+                        </div>
+                        <div class="form-group">
+                            <label>OLED SCL Pin (GPIO)</label>
+                            <input type="number" id="cfg-scl-pin">
+                        </div>
+                        <div class="form-group">
+                            <label>SoftAP Wi-Fi SSID</label>
+                            <input type="text" id="cfg-ap-ssid">
+                        </div>
+                        <div class="form-group">
+                            <label>SoftAP Wi-Fi Password (min 8 chars)</label>
+                            <input type="password" id="cfg-ap-pass">
+                        </div>
+                    </div>
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="cfg-demo-mode">
+                        <label for="cfg-demo-mode"><strong>Enable Test / Demo Mode</strong> (Simulates live tire readings & alerts)</label>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <button type="submit" class="btn">💾 Save & Apply Settings</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
+
     <script>
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (name === 'dash') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('tab-dash').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('tab-set').classList.add('active');
+                loadSettings();
+            }
+        }
         function formatAge(ageSec) { if (ageSec < 0) return "Never"; if (ageSec < 60) return ageSec + "s ago"; if (ageSec < 3600) return Math.floor(ageSec / 60) + "m ago"; return Math.floor(ageSec / 3600) + "h ago"; }
         async function fetchTPMS() {
             try {
@@ -116,6 +215,46 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 const term = document.getElementById('terminal');
                 term.innerHTML = logs.map(l => `<div>[+${l.t}s] ${l.msg}</div>`).join('');
                 term.scrollTop = term.scrollHeight;
+            } catch (e) {}
+        }
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/settings'); if (!res.ok) return; const s = await res.json();
+                document.getElementById('cfg-press-unit').value = s.press_unit;
+                document.getElementById('cfg-temp-unit').value = s.temp_unit;
+                document.getElementById('cfg-min-psi').value = s.min_psi;
+                document.getElementById('cfg-max-psi').value = s.max_psi;
+                document.getElementById('cfg-max-temp').value = s.max_temp;
+                document.getElementById('cfg-min-batt').value = s.min_batt;
+                document.getElementById('cfg-sda-pin').value = s.sda_pin;
+                document.getElementById('cfg-scl-pin').value = s.scl_pin;
+                document.getElementById('cfg-ap-ssid').value = s.ap_ssid;
+                document.getElementById('cfg-ap-pass').value = s.ap_pass;
+                document.getElementById('cfg-demo-mode').checked = s.demo_mode;
+            } catch (e) {}
+        }
+        async function saveSettings(e) {
+            e.preventDefault();
+            const body = new URLSearchParams({
+                press_unit: document.getElementById('cfg-press-unit').value,
+                temp_unit: document.getElementById('cfg-temp-unit').value,
+                min_psi: document.getElementById('cfg-min-psi').value,
+                max_psi: document.getElementById('cfg-max-psi').value,
+                max_temp: document.getElementById('cfg-max-temp').value,
+                min_batt: document.getElementById('cfg-min-batt').value,
+                sda_pin: document.getElementById('cfg-sda-pin').value,
+                scl_pin: document.getElementById('cfg-scl-pin').value,
+                ap_ssid: document.getElementById('cfg-ap-ssid').value,
+                ap_pass: document.getElementById('cfg-ap-pass').value,
+                demo_mode: document.getElementById('cfg-demo-mode').checked ? 'true' : 'false'
+            });
+            try {
+                const res = await fetch('/api/settings', { method: 'POST', body });
+                if (res.ok) {
+                    const t = document.getElementById('toast');
+                    t.style.display = 'block';
+                    setTimeout(() => t.style.display = 'none', 3000);
+                }
             } catch (e) {}
         }
         async function clearLogs() { await fetch('/api/clear'); fetchLogs(); }
@@ -160,16 +299,19 @@ void WebServerManager::begin() {
 
     if (!staConnected) {
         WiFi.mode(WIFI_AP);
-        WiFi.softAP(AP_SSID, AP_PASS);
+        WiFi.softAP(ConfigMgr.ap_ssid.c_str(), ConfigMgr.ap_pass.c_str());
         m_ipAddress = WiFi.softAPIP().toString();
-        m_wifiModeStr = "AP (" + String(AP_SSID) + ")";
-        Logger.addLog("[Wi-Fi] SoftAP Started! SSID: %s | URL: http://%s", AP_SSID, m_ipAddress.c_str());
+        m_wifiModeStr = "AP (" + ConfigMgr.ap_ssid + ")";
+        Logger.addLog("[Wi-Fi] SoftAP Started! SSID: %s | URL: http://%s", ConfigMgr.ap_ssid.c_str(), m_ipAddress.c_str());
     }
 
     m_server.on("/", HTTP_GET, [this]() { handleRoot(); });
     m_server.on("/api/data", HTTP_GET, [this]() { handleApiData(); });
     m_server.on("/api/logs", HTTP_GET, [this]() { handleApiLogs(); });
     m_server.on("/api/clear", HTTP_GET, [this]() { handleApiClear(); });
+    m_server.on("/api/settings", HTTP_GET, [this]() { handleGetSettings(); });
+    m_server.on("/api/settings", HTTP_POST, [this]() { handlePostSettings(); });
+
     m_server.begin();
     Logger.addLog("[HTTP] Web Server active on port 80");
 #else
@@ -187,6 +329,36 @@ void WebServerManager::handleClient() {
 void WebServerManager::handleRoot() {
 #if ENABLE_WEBSERVER
     m_server.send(200, "text/html", INDEX_HTML);
+#endif
+}
+
+void WebServerManager::handleGetSettings() {
+#if ENABLE_WEBSERVER
+    m_server.send(200, "application/json", ConfigMgr.getSettingsJson());
+#endif
+}
+
+void WebServerManager::handlePostSettings() {
+#if ENABLE_WEBSERVER
+    String press_unit = m_server.arg("press_unit");
+    String temp_unit  = m_server.arg("temp_unit");
+    float min_psi     = m_server.arg("min_psi").toFloat();
+    float max_psi     = m_server.arg("max_psi").toFloat();
+    float max_temp    = m_server.arg("max_temp").toFloat();
+    int min_batt      = m_server.arg("min_batt").toInt();
+    int sda_pin       = m_server.arg("sda_pin").toInt();
+    int scl_pin       = m_server.arg("scl_pin").toInt();
+    String ap_ssid    = m_server.arg("ap_ssid");
+    String ap_pass    = m_server.arg("ap_pass");
+    bool demo_mode    = (m_server.arg("demo_mode") == "true" || m_server.arg("demo_mode") == "1");
+
+    ConfigMgr.updateFromParams(press_unit, temp_unit, min_psi, max_psi, max_temp, min_batt,
+                              sda_pin, scl_pin, ap_ssid, ap_pass, demo_mode);
+
+    TreelSensorReceiver.setDemoMode(demo_mode);
+
+    Logger.addLog("[SETTINGS] Settings updated via Web UI & saved to NVS!");
+    m_server.send(200, "application/json", "{\"status\":\"OK\"}");
 #endif
 }
 
@@ -224,7 +396,7 @@ void WebServerManager::handleApiData() {
         json += "\"battery\":" + String(t.battery_percent) + ",";
         json += "\"rssi\":" + String(t.rssi) + ",";
         json += "\"mode\":\"" + t.mode + "\",";
-        json += "\"alert\":\"" + String(t.getAlertString()) + "\",";
+        json += "\"alert\":\"" + String(t.getAlertString(ConfigMgr.alert_min_psi, ConfigMgr.alert_max_psi, ConfigMgr.alert_max_temp_c, ConfigMgr.alert_min_batt)) + "\",";
         json += "\"age_s\":" + String(ageS);
         json += "}";
         if (i < 3) json += ",";

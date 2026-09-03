@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include <TreelTPMS.h>
 #include "Config.h"
+#include "ConfigManager.h"
 #include "Logger.h"
 #include "DisplayManager.h"
 #include "WebServerManager.h"
@@ -28,6 +29,9 @@ void setup() {
     Serial.println("  ESP32 Treel TPMS Receiver + Remote Web Dashboard     ");
     Serial.println("=======================================================");
 
+    // 0. Load Dynamic Settings from NVS Flash
+    ConfigMgr.begin();
+
     // 1. Initialize OLED Display (if enabled)
     Display.begin();
 
@@ -37,7 +41,7 @@ void setup() {
     // 3. Initialize & Start TreelTPMS Receiver
     TreelSensorReceiver.setWhitelist(SENSOR_MACS, SENSOR_SHORT_IDS);
     TreelSensorReceiver.setCallback(onTirePacketReceived);
-    if (ENABLE_DEMO_MODE) {
+    if (ConfigMgr.enable_demo_mode) {
         TreelSensorReceiver.setDemoMode(true);
         Logger.addLog("[DEMO] Test Mode ENABLED! Simulating live telemetry & warnings.");
     }
