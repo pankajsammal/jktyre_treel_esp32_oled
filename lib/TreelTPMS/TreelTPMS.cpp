@@ -52,10 +52,19 @@ void TreelTPMS::setWhitelist(const char* macs[4], const char* shortIds[4]) {
 }
 
 void TreelTPMS::setDemoMode(bool enable) {
+    bool wasDemo = m_demoMode;
     m_demoMode = enable;
     if (enable) {
         m_demoStep = 0;
         m_lastDemoStepMs = 0;
+    } else if (wasDemo) {
+        clearAllTires();
+    }
+}
+
+void TreelTPMS::clearAllTires() {
+    for (int i = 0; i < 4; i++) {
+        m_tires[i].clear();
     }
 }
 

@@ -37,10 +37,19 @@ void TreelTPMSC3::initAES() {
 }
 
 void TreelTPMSC3::setDemoMode(bool enable) {
+    bool wasDemo = m_demoMode;
     m_demoMode = enable;
     if (enable) {
         m_demoStep = 0;
         m_lastDemoStepMs = 0;
+    } else if (wasDemo) {
+        clearAllTires();
+    }
+}
+
+void TreelTPMSC3::clearAllTires() {
+    for (int i = 0; i < 4; i++) {
+        m_tires[i].clear();
     }
 }
 

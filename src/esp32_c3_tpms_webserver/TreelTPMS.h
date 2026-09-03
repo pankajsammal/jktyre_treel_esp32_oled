@@ -57,6 +57,20 @@ struct TireData {
         has_received = true;
     }
 
+    void clear() {
+        pressure_psi = 0.0f;
+        pressure_bar = 0.0f;
+        pressure_kpa = 0.0f;
+        temperature_c = 0.0f;
+        temperature_f = 32.0f;
+        battery_percent = -1;
+        rssi = -100;
+        mode[0] = '\0';
+        sensor_id[0] = '\0';
+        last_updated_ms = 0;
+        has_received = false;
+    }
+
     AlertState getAlertState(float minPsi = ALERT_MIN_PSI, float maxPsi = ALERT_MAX_PSI, float maxTempC = ALERT_MAX_TEMP_C, int minBatt = ALERT_MIN_BATT) const {
         if (!has_received) return ALERT_WAITING;
         if (pressure_psi < minPsi) return ALERT_LOW_PRESSURE;
@@ -113,6 +127,7 @@ public:
     void setDemoMode(bool enable);
     bool isDemoMode() const { return m_demoMode; }
     void update();
+    void clearAllTires();
 
     static void initAES();
     static inline bool fastDecryptAES128(const uint8_t* ciphertext, uint8_t* plaintext) {
