@@ -111,11 +111,17 @@ Choose the tested sketch corresponding to your hardware:
 - **Standard ESP32 (30/38-Pin DevKit)**: Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino)
 - **ESP32-C3 SuperMini**: Open [`src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino`](src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino)
 
-> [!TIP]
-> **ESP32-C3 Arduino IDE Partition Scheme Settings**:
-> When compiling for **ESP32-C3 SuperMini**, go to **Tools -> Partition Scheme** in Arduino IDE and select:
-> - **`Huge APP (3MB No OTA/1MB SPIFFS)`** or **`Minimal SPIFFS (1.9MB APP with OTA)`**
-> This expands the flash memory allocated for the app binary from 1.25 MB to 1.9 MB – 3.0 MB.
+> [!IMPORTANT]
+> **Arduino IDE Partition Setting (Required for ESP32-C3 SuperMini)**:
+> When compiling for **ESP32-C3 SuperMini**, the default partition scheme reserves only 1.25 MB for program storage, which can trigger a `text section exceeds available space` compilation error.
+> 
+> **How to configure in Arduino IDE**:
+> 1. Go to **Tools $\rightarrow$ Partition Scheme**
+> 2. Change from *Default 4MB with spiffs* to either:
+>    - **`Huge APP (3MB No OTA/1MB SPIFFS)`** *(Recommended)*
+>    - **`Minimal SPIFFS (1.9MB APP with OTA)`**
+>
+> This expands program flash storage from 1.25 MB to **1.9 MB – 3.0 MB**.
 
 ---
 
