@@ -111,7 +111,11 @@ Choose the tested sketch corresponding to your hardware:
 - **Standard ESP32 (30/38-Pin DevKit)**: Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino)
 - **ESP32-C3 SuperMini**: Open [`src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino`](src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino)
 
-Edit your Wi-Fi credentials and 4 sensor MAC addresses:
+> [!TIP]
+> **ESP32-C3 Arduino IDE Partition Scheme Settings**:
+> When compiling for **ESP32-C3 SuperMini**, go to **Tools -> Partition Scheme** in Arduino IDE and select:
+> - **`Huge APP (3MB No OTA/1MB SPIFFS)`** or **`Minimal SPIFFS (1.9MB APP with OTA)`**
+> This expands the flash memory allocated for the app binary from 1.25 MB to 1.9 MB – 3.0 MB.
 
 ---
 

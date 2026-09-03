@@ -1,7 +1,9 @@
 // =====================================================================
 // ESP32-C3 SuperMini Ultra-Optimized Treel TPMS BLE Receiver & Web Server
 // =====================================================================
-// Dedicated Single-Core RISC-V Architecture Firmware
+// 💡 ARDUINO IDE BOARD SETTINGS:
+// Under Tools -> Partition Scheme, select:
+//   "Huge APP (3MB No OTA/1MB SPIFFS)" or "Minimal SPIFFS (1.9MB APP with OTA)"
 // =====================================================================
 
 #include <Arduino.h>
