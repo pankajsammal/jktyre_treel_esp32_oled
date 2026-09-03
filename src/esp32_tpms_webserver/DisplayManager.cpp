@@ -75,14 +75,14 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     m_u8g2.drawStr(x + 3, y + 26, ageStr.c_str());
 
     // 4. Right Side: Pressure Digits
-    // For KPA (3 digits like 225), use logisoso20_tn and shift 5px left to prevent right-edge clipping
+    // For KPA (3 digits like 225), use logisoso18_tn and align to x + 53 (shifted 2px further left)
     char psiBuf[10] = "--";
 
     if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
         if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
-        m_u8g2.setFont(u8g2_font_logisoso20_tn);
+        m_u8g2.setFont(u8g2_font_logisoso18_tn);
         int psiWidth = m_u8g2.getStrWidth(psiBuf);
-        int psiX = x + 55 - psiWidth;
+        int psiX = x + 53 - psiWidth;
         if (psiX < x + 24) psiX = x + 24;
         m_u8g2.drawStr(psiX, y + 24, psiBuf);
     } else {
