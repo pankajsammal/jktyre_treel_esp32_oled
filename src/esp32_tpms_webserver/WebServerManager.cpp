@@ -4,276 +4,7 @@
 WebServerManager WebDash;
 
 #if ENABLE_WEBSERVER
-const char INDEX_HTML[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treel TPMS Monitor</title>
-    <style>
-        :root {
-            --bg-base: #0b0f19;
-            --bg-card: #151d2f;
-            --card-border: #1e293b;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --accent: #0284c7;
-            --accent-cyan: #38bdf8;
-            --alert-red: #ef4444;
-            --alert-green: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            padding: 16px;
-            display: flex;
-            justify-content: center;
-        }
-        .container { width: 100%; max-width: 900px; }
-        header { text-align: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--card-border); }
-        h1 { color: var(--accent-cyan); font-size: 1.6rem; font-weight: 700; }
-        .meta-bar { margin-top: 6px; font-size: 0.85rem; color: var(--text-dim); display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
-        .nav-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
-        .tab-btn { background: #1e293b; color: var(--text-dim); border: 1px solid var(--card-border); padding: 8px 18px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent-cyan); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
-        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
-        .card.alert-low, .card.alert-high, .card.alert-temp { border-color: var(--alert-red); box-shadow: 0 0 16px rgba(239, 68, 68, 0.25); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .pos-title { font-size: 1.1rem; font-weight: 700; color: var(--accent-cyan); }
-        .status-badge { font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 12px; background: #334155; color: #94a3b8; }
-        .status-badge.normal { background: rgba(16, 185, 129, 0.2); color: var(--alert-green); border: 1px solid var(--alert-green); }
-        .status-badge.alert  { background: rgba(239, 68, 68, 0.2); color: var(--alert-red); border: 1px solid var(--alert-red); }
-        .press-hero { display: flex; align-items: baseline; gap: 8px; margin: 8px 0; }
-        .press-val { font-size: 2.6rem; font-weight: 800; color: #ffffff; line-height: 1; }
-        .press-unit { font-size: 1.1rem; font-weight: 600; color: var(--accent-cyan); }
-        .press-bar { font-size: 0.9rem; color: var(--text-dim); }
-        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #1e293b; font-size: 0.85rem; }
-        .metric-item span { color: var(--text-dim); font-size: 0.75rem; display: block; }
-        .metric-item strong { color: #f1f5f9; font-size: 0.95rem; }
-        .card-footer { margin-top: 10px; font-size: 0.75rem; color: #64748b; display: flex; justify-content: space-between; }
-        .logs-section, .settings-section { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-        .logs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .logs-header h3, .settings-section h3 { font-size: 1.05rem; color: var(--accent-cyan); margin-bottom: 12px; }
-        .terminal { background: #060911; border: 1px solid #1e293b; border-radius: 6px; padding: 10px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 0.78rem; color: #38bdf8; line-height: 1.4; }
-        .btn { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
-        .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
-        .form-group input, .form-group select { width: 100%; background: #0a0f1d; border: 1px solid var(--card-border); color: #fff; padding: 8px; border-radius: 6px; font-size: 0.85rem; }
-        .form-group.checkbox { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
-        .form-group.checkbox input { width: auto; }
-        .toast { display: none; background: var(--alert-green); color: #000; padding: 10px; border-radius: 6px; font-weight: 700; text-align: center; margin-bottom: 12px; font-size: 0.85rem; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>TREEL TPMS BLE MONITOR</h1>
-            <div class="meta-bar">
-                <span>Wi-Fi: <strong id="wifi-mode">--</strong></span>
-                <span>IP: <strong id="ip-addr">--</strong></span>
-                <span>Uptime: <strong id="uptime">0s</strong></span>
-                <span>Total Packets: <strong id="total-pkts">0</strong></span>
-            </div>
-        </header>
-
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('dash')">📱 Live Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('set')">⚙️ System Settings</button>
-        </div>
-
-        <div id="tab-dash" class="tab-content active">
-            <div class="grid">
-                <div class="card" id="card-FL"><div class="card-header"><span class="pos-title">FL - Front Left</span><span class="status-badge" id="badge-FL">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-FL">--</div><div class="press-unit" id="unit-FL">PSI</div><div class="press-bar" id="bar-FL">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-FL">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-FL">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-FL">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-FL">-- dBm</strong></div></div><div class="card-footer"><span id="mac-FL">MAC: Configured</span><span id="age-FL">Last: Never</span></div></div>
-                <div class="card" id="card-FR"><div class="card-header"><span class="pos-title">FR - Front Right</span><span class="status-badge" id="badge-FR">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-FR">--</div><div class="press-unit" id="unit-FR">PSI</div><div class="press-bar" id="bar-FR">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-FR">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-FR">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-FR">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-FR">-- dBm</strong></div></div><div class="card-footer"><span id="mac-FR">MAC: Configured</span><span id="age-FR">Last: Never</span></div></div>
-                <div class="card" id="card-RL"><div class="card-header"><span class="pos-title">RL - Rear Left</span><span class="status-badge" id="badge-RL">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-RL">--</div><div class="press-unit" id="unit-RL">PSI</div><div class="press-bar" id="bar-RL">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-RL">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-RL">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-RL">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-RL">-- dBm</strong></div></div><div class="card-footer"><span id="mac-RL">MAC: Configured</span><span id="age-RL">Last: Never</span></div></div>
-                <div class="card" id="card-RR"><div class="card-header"><span class="pos-title">RR - Rear Right</span><span class="status-badge" id="badge-RR">WAITING</span></div><div class="press-hero"><div class="press-val" id="psi-RR">--</div><div class="press-unit" id="unit-RR">PSI</div><div class="press-bar" id="bar-RR">(-- Bar)</div></div><div class="metrics-grid"><div class="metric-item"><span>TEMPERATURE</span><strong id="temp-RR">-- &deg;C</strong></div><div class="metric-item"><span>BATTERY</span><strong id="batt-RR">--%</strong></div><div class="metric-item"><span>MODE / ID</span><strong id="mode-RR">--</strong></div><div class="metric-item"><span>SIGNAL</span><strong id="rssi-RR">-- dBm</strong></div></div><div class="card-footer"><span id="mac-RR">MAC: Configured</span><span id="age-RR">Last: Never</span></div></div>
-            </div>
-            <div class="logs-section">
-                <div class="logs-header"><h3>Live BLE Packet Stream</h3><button class="btn btn-sm" onclick="clearLogs()">Clear</button></div>
-                <div class="terminal" id="terminal">Loading telemetry stream...</div>
-            </div>
-        </div>
-
-        <div id="tab-set" class="tab-content">
-            <div class="settings-section">
-                <h3>⚙️ System & Alert Preferences (Saved to NVS Flash)</h3>
-                <div id="toast" class="toast">Settings Saved Successfully!</div>
-                <form id="set-form" onsubmit="saveSettings(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>OLED Pressure Display Unit</label>
-                            <select id="cfg-press-unit">
-                                <option value="0">PSI (PSI)</option>
-                                <option value="1">BAR (Bar)</option>
-                                <option value="2">KPA (kPa)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>OLED Temperature Unit</label>
-                            <select id="cfg-temp-unit">
-                                <option value="0">Celsius (&deg;C)</option>
-                                <option value="1">Fahrenheit (&deg;F)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Low Pressure Alert (PSI)</label>
-                            <input type="number" step="0.5" id="cfg-min-psi">
-                        </div>
-                        <div class="form-group">
-                            <label>High Pressure Alert (PSI)</label>
-                            <input type="number" step="0.5" id="cfg-max-psi">
-                        </div>
-                        <div class="form-group">
-                            <label>High Temp Alert (&deg;C)</label>
-                            <input type="number" step="1" id="cfg-max-temp">
-                        </div>
-                        <div class="form-group">
-                            <label>Low Battery Alert (%)</label>
-                            <input type="number" step="1" id="cfg-min-batt">
-                        </div>
-                        <div class="form-group">
-                            <label>OLED SDA Pin (GPIO)</label>
-                            <input type="number" id="cfg-sda-pin">
-                        </div>
-                        <div class="form-group">
-                            <label>OLED SCL Pin (GPIO)</label>
-                            <input type="number" id="cfg-scl-pin">
-                        </div>
-                        <div class="form-group">
-                            <label>SoftAP Wi-Fi SSID</label>
-                            <input type="text" id="cfg-ap-ssid">
-                        </div>
-                        <div class="form-group">
-                            <label>SoftAP Wi-Fi Password (min 8 chars)</label>
-                            <input type="password" id="cfg-ap-pass">
-                        </div>
-                    </div>
-                    <div class="form-group checkbox">
-                        <input type="checkbox" id="cfg-demo-mode">
-                        <label for="cfg-demo-mode"><strong>Enable Test / Demo Mode</strong> (Simulates live tire readings & alerts)</label>
-                    </div>
-                    <div style="margin-top: 16px;">
-                        <button type="submit" class="btn">💾 Save & Apply Settings</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function switchTab(name) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if (name === 'dash') {
-                document.querySelectorAll('.tab-btn')[0].classList.add('active');
-                document.getElementById('tab-dash').classList.add('active');
-            } else {
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
-                document.getElementById('tab-set').classList.add('active');
-                loadSettings();
-            }
-        }
-        function formatAge(ageSec) { if (ageSec < 0) return "Never"; if (ageSec < 60) return ageSec + "s ago"; if (ageSec < 3600) return Math.floor(ageSec / 60) + "m ago"; return Math.floor(ageSec / 3600) + "h ago"; }
-        async function fetchTPMS() {
-            try {
-                const res = await fetch('/api/data'); if (!res.ok) return; const data = await res.json();
-                document.getElementById('wifi-mode').innerText = data.system.wifi_mode;
-                document.getElementById('ip-addr').innerText = data.system.ip;
-                document.getElementById('uptime').innerText = data.system.uptime_s + 's';
-                document.getElementById('total-pkts').innerText = data.system.total_ble + ' (' + data.system.tpms_pkts + ' TPMS)';
-                ['FL', 'FR', 'RL', 'RR'].forEach(pos => {
-                    const tire = data.tires[pos]; if (!tire) return;
-                    const card = document.getElementById('card-' + pos); const badge = document.getElementById('badge-' + pos);
-                    if (tire.has_data) {
-                        document.getElementById('psi-' + pos).innerText = tire.psi.toFixed(1);
-                        document.getElementById('bar-' + pos).innerText = '(' + tire.bar.toFixed(2) + ' Bar)';
-                        document.getElementById('temp-' + pos).innerHTML = tire.temp_c.toFixed(1) + ' &deg;C / ' + tire.temp_f.toFixed(0) + ' &deg;F';
-                        document.getElementById('batt-' + pos).innerText = tire.battery >= 0 ? tire.battery + '%' : 'N/A';
-                        document.getElementById('mode-' + pos).innerText = tire.mode + ' (' + (tire.sensor_id || 'ID') + ')';
-                        document.getElementById('rssi-' + pos).innerText = tire.rssi + ' dBm';
-                        document.getElementById('mac-' + pos).innerText = 'MAC: ' + tire.mac;
-                        document.getElementById('age-' + pos).innerText = 'Last: ' + formatAge(tire.age_s);
-                        badge.innerText = tire.alert; badge.className = 'status-badge ' + (tire.alert === 'NORMAL' ? 'normal' : 'alert');
-                        card.className = 'card ' + (tire.alert !== 'NORMAL' ? 'alert-low' : '');
-                    } else {
-                        document.getElementById('psi-' + pos).innerText = '--';
-                        document.getElementById('bar-' + pos).innerText = '(-- Bar)';
-                        document.getElementById('temp-' + pos).innerHTML = '-- &deg;C';
-                        document.getElementById('batt-' + pos).innerText = '--%';
-                        document.getElementById('mode-' + pos).innerText = '--';
-                        document.getElementById('rssi-' + pos).innerText = '-- dBm';
-                        document.getElementById('age-' + pos).innerText = 'Last: Never';
-                        badge.innerText = 'WAITING';
-                        badge.className = 'status-badge';
-                        card.className = 'card';
-                    }
-                });
-            } catch (e) {}
-        }
-        async function fetchLogs() {
-            try {
-                const res = await fetch('/api/logs'); if (!res.ok) return; const logs = await res.json();
-                const term = document.getElementById('terminal');
-                term.innerHTML = logs.map(l => `<div>[+${l.t}s] ${l.msg}</div>`).join('');
-                term.scrollTop = term.scrollHeight;
-            } catch (e) {}
-        }
-        async function loadSettings() {
-            try {
-                const res = await fetch('/api/settings'); if (!res.ok) return; const s = await res.json();
-                document.getElementById('cfg-press-unit').value = s.press_unit;
-                document.getElementById('cfg-temp-unit').value = s.temp_unit;
-                document.getElementById('cfg-min-psi').value = s.min_psi;
-                document.getElementById('cfg-max-psi').value = s.max_psi;
-                document.getElementById('cfg-max-temp').value = s.max_temp;
-                document.getElementById('cfg-min-batt').value = s.min_batt;
-                document.getElementById('cfg-sda-pin').value = s.sda_pin;
-                document.getElementById('cfg-scl-pin').value = s.scl_pin;
-                document.getElementById('cfg-ap-ssid').value = s.ap_ssid;
-                document.getElementById('cfg-ap-pass').value = s.ap_pass;
-                document.getElementById('cfg-demo-mode').checked = s.demo_mode;
-            } catch (e) {}
-        }
-        async function saveSettings(e) {
-            e.preventDefault();
-            const body = new URLSearchParams({
-                press_unit: document.getElementById('cfg-press-unit').value,
-                temp_unit: document.getElementById('cfg-temp-unit').value,
-                min_psi: document.getElementById('cfg-min-psi').value,
-                max_psi: document.getElementById('cfg-max-psi').value,
-                max_temp: document.getElementById('cfg-max-temp').value,
-                min_batt: document.getElementById('cfg-min-batt').value,
-                sda_pin: document.getElementById('cfg-sda-pin').value,
-                scl_pin: document.getElementById('cfg-scl-pin').value,
-                ap_ssid: document.getElementById('cfg-ap-ssid').value,
-                ap_pass: document.getElementById('cfg-ap-pass').value,
-                demo_mode: document.getElementById('cfg-demo-mode').checked ? 'true' : 'false'
-            });
-            try {
-                const res = await fetch('/api/settings', { method: 'POST', body });
-                if (res.ok) {
-                    const t = document.getElementById('toast');
-                    t.style.display = 'block';
-                    setTimeout(() => t.style.display = 'none', 3000);
-                }
-            } catch (e) {}
-        }
-        async function clearLogs() { await fetch('/api/clear'); fetchLogs(); }
-        setInterval(fetchTPMS, 1000); setInterval(fetchLogs, 2000); fetchTPMS(); fetchLogs();
-    </script>
-</body>
-</html>
-)rawliteral";
+const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>ESP32 Treel TPMS</title><style>:root{--bg:#090d16;--card:#131b2e;--border:#1e293b;--text:#f8fafc;--muted:#94a3b8;--cyan:#38bdf8;--green:#10b981;--red:#ef4444;--accent:#0284c7}*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);padding:12px;display:flex;justify-content:center}.container{width:100%;max-width:850px}header{text-align:center;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}h1{color:var(--cyan);font-size:1.4rem}.meta{font-size:.8rem;color:var(--muted);margin-top:4px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.nav-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:14px}.tab-btn{background:#1e293b;color:var(--muted);border:1px solid var(--border);padding:6px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer}.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--cyan)}.tab-content{display:none}.tab-content.active{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}@media(max-width:550px){.grid{grid-template-columns:1fr}}.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px}.card.alert{border-color:var(--red);box-shadow:0 0 12px rgba(239,68,68,.3)}.card-top{display:flex;justify-content:space-between;align-items:center}.pos{font-size:1.05rem;font-weight:700;color:var(--cyan)}.badge{font-size:.7rem;padding:2px 6px;border-radius:10px;background:#334155;color:#cbd5e1}.badge.ok{background:rgba(16,185,129,.2);color:var(--green);border:1px solid var(--green)}.badge.alt{background:rgba(239,68,68,.2);color:var(--red);border:1px solid var(--red)}.hero{display:flex;align-items:baseline;gap:6px;margin:6px 0}.psi{font-size:2.2rem;font-weight:800;color:#fff;line-height:1}.unit{font-size:.95rem;color:var(--cyan);font-weight:600}.bar{font-size:.8rem;color:var(--muted)}.details{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:.8rem}.details span{color:var(--muted);font-size:.7rem;display:block}.card-foot{margin-top:6px;font-size:.7rem;color:#64748b;display:flex;justify-content:space-between}.log-box,.settings-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}.log-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.log-head h3,.settings-section h3{font-size:.9rem;color:var(--cyan);margin-bottom:10px}.term{background:#050811;border:1px solid var(--border);border-radius:6px;padding:8px;height:140px;overflow-y:auto;font-family:monospace;font-size:.72rem;color:#38bdf8;line-height:1.3}.btn{background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer}.btn-sm{padding:3px 8px;font-size:.7rem}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:550px){.form-grid{grid-template-columns:1fr}}.form-group{margin-bottom:8px}.form-group label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:3px}.form-group input,.form-group select{width:100%;background:#0a0f1d;border:1px solid var(--border);color:#fff;padding:6px;border-radius:6px;font-size:.82rem}.form-group.checkbox{display:flex;align-items:center;gap:8px;margin-top:10px}.form-group.checkbox input{width:auto}.toast{display:none;background:var(--green);color:#000;padding:8px;border-radius:6px;font-weight:700;text-align:center;margin-bottom:10px;font-size:.8rem}</style></head><body><div class="container"><header><h1>TREEL TPMS &bull; ESP32 MONITOR</h1><div class="meta"><span>Wi-Fi: <strong id="wf">--</strong></span><span>IP: <strong id="ip">--</strong></span><span>Uptime: <strong id="up">0s</strong></span><span>Packets: <strong id="pk">0</strong></span><span>RAM: <strong id="hp">0 KB</strong></span></div></header><div class="nav-tabs"><button class="tab-btn active" onclick="switchTab('dash')">📱 Live Dashboard</button><button class="tab-btn" onclick="switchTab('set')">⚙️ System Settings</button></div><div id="tab-dash" class="tab-content active"><div class="grid"><div class="card" id="c-FL"><div class="card-top"><span class="pos">FL - Front Left</span><span class="badge" id="b-FL">WAITING</span></div><div class="hero"><div class="psi" id="p-FL">--</div><div class="unit">PSI</div><div class="bar" id="bar-FL">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-FL">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-FL">--%</strong></div><div><span>MODE / ID</span><strong id="m-FL">--</strong></div><div><span>SIGNAL</span><strong id="r-FL">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-FL">Never</span></div></div><div class="card" id="c-FR"><div class="card-top"><span class="pos">FR - Front Right</span><span class="badge" id="b-FR">WAITING</span></div><div class="hero"><div class="psi" id="p-FR">--</div><div class="unit">PSI</div><div class="bar" id="bar-FR">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-FR">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-FR">--%</strong></div><div><span>MODE / ID</span><strong id="m-FR">--</strong></div><div><span>SIGNAL</span><strong id="r-FR">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-FR">Never</span></div></div><div class="card" id="c-RL"><div class="card-top"><span class="pos">RL - Rear Left</span><span class="badge" id="b-RL">WAITING</span></div><div class="hero"><div class="psi" id="p-RL">--</div><div class="unit">PSI</div><div class="bar" id="bar-RL">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-RL">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-RL">--%</strong></div><div><span>MODE / ID</span><strong id="m-RL">--</strong></div><div><span>SIGNAL</span><strong id="r-RL">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-RL">Never</span></div></div><div class="card" id="c-RR"><div class="card-top"><span class="pos">RR - Rear Right</span><span class="badge" id="b-RR">WAITING</span></div><div class="hero"><div class="psi" id="p-RR">--</div><div class="unit">PSI</div><div class="bar" id="bar-RR">(-- Bar)</div></div><div class="details"><div><span>TEMP</span><strong id="t-RR">-- &deg;C</strong></div><div><span>BATTERY</span><strong id="bat-RR">--%</strong></div><div><span>MODE / ID</span><strong id="m-RR">--</strong></div><div><span>SIGNAL</span><strong id="r-RR">-- dBm</strong></div></div><div class="card-foot"><span>MAC Configured</span><span id="a-RR">Never</span></div></div></div><div class="log-box"><div class="log-head"><h3>Live BLE Telemetry Stream</h3><button class="btn btn-sm" onclick="fetch('/api/clear')">Clear</button></div><div class="term" id="term">Connecting...</div></div></div><div id="tab-set" class="tab-content"><div class="settings-section"><h3>⚙️ ESP32 System Preferences (Saved to NVS Flash)</h3><div id="toast" class="toast">Settings Saved Successfully!</div><form id="set-form" onsubmit="saveSettings(event)"><div class="form-grid"><div class="form-group"><label>Router Wi-Fi SSID (STA)</label><input type="text" id="cfg-wifi-ssid"></div><div class="form-group"><label>Router Wi-Fi Password (STA)</label><input type="password" id="cfg-wifi-pass"></div><div class="form-group"><label>OLED Pressure Display Unit</label><select id="cfg-press-unit"><option value="0">PSI (PSI)</option><option value="1">BAR (Bar)</option><option value="2">KPA (kPa)</option></select></div><div class="form-group"><label>OLED Temperature Unit</label><select id="cfg-temp-unit"><option value="0">Celsius (&deg;C)</option><option value="1">Fahrenheit (&deg;F)</option></select></div><div class="form-group"><label>Low Pressure Alert (PSI)</label><input type="number" step="0.5" id="cfg-min-psi"></div><div class="form-group"><label>High Pressure Alert (PSI)</label><input type="number" step="0.5" id="cfg-max-psi"></div><div class="form-group"><label>High Temp Alert (&deg;C)</label><input type="number" step="1" id="cfg-max-temp"></div><div class="form-group"><label>Low Battery Alert (%)</label><input type="number" step="1" id="cfg-min-batt"></div><div class="form-group"><label>OLED SDA Pin (GPIO)</label><input type="number" id="cfg-sda-pin"></div><div class="form-group"><label>OLED SCL Pin (GPIO)</label><input type="number" id="cfg-scl-pin"></div><div class="form-group"><label>SoftAP Wi-Fi SSID</label><input type="text" id="cfg-ap-ssid"></div><div class="form-group"><label>SoftAP Wi-Fi Password (min 8 chars)</label><input type="password" id="cfg-ap-pass"></div></div><div class="form-group checkbox"><input type="checkbox" id="cfg-try-sta"><label for="cfg-try-sta"><strong>Try Router Wi-Fi First (STA Mode)</strong> (Uncheck to force direct SoftAP mode)</label></div><div class="form-group checkbox"><input type="checkbox" id="cfg-demo-mode"><label for="cfg-demo-mode"><strong>Enable Test / Demo Mode</strong> (Simulates live tire readings & alerts)</label></div><div style="margin-top:14px"><button type="submit" class="btn">💾 Save & Apply Settings</button></div></form></div></div></div><script>function switchTab(n){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));if(n==='dash'){document.querySelectorAll('.tab-btn')[0].classList.add('active');document.getElementById('tab-dash').classList.add('active')}else{document.querySelectorAll('.tab-btn')[1].classList.add('active');document.getElementById('tab-set').classList.add('active');loadSettings()}}function fmtAge(s){if(s<0)return"Never";if(s<60)return s+"s ago";if(s<3600)return Math.floor(s/60)+"m ago";return Math.floor(s/3600)+"h ago"}async function poll(){try{const res=await fetch('/api/data');if(!res.ok)return;const d=await res.json();document.getElementById('wf').innerText=d.sys.wifi;document.getElementById('ip').innerText=d.sys.ip;document.getElementById('up').innerText=d.sys.up+'s';document.getElementById('pk').innerText=d.sys.tpms+'/'+d.sys.ble;document.getElementById('hp').innerText=Math.round(d.sys.heap/1024)+' KB';['FL','FR','RL','RR'].forEach(p=>{const t=d.tires[p];if(!t)return;const card=document.getElementById('c-'+p);const b=document.getElementById('b-'+p);if(t.has){document.getElementById('p-'+p).innerText=t.psi.toFixed(1);document.getElementById('bar-'+p).innerText='('+t.bar.toFixed(2)+' Bar)';document.getElementById('t-'+p).innerHTML=t.c.toFixed(1)+' &deg;C / '+t.f.toFixed(0)+' &deg;F';document.getElementById('bat-'+p).innerText=t.bat>=0?t.bat+'%':'N/A';document.getElementById('m-'+p).innerText=t.mode+' ('+(t.id||'--')+')';document.getElementById('r-'+p).innerText=t.rssi+' dBm';document.getElementById('a-'+p).innerText=fmtAge(t.age);b.innerText=t.alt;b.className='badge '+(t.alt==='NORMAL'?'ok':'alt');card.className='card '+(t.alt!=='NORMAL'?'alert':'')}else{document.getElementById('p-'+p).innerText='--';document.getElementById('bar-'+p).innerText='(-- Bar)';document.getElementById('t-'+p).innerHTML='-- &deg;C';document.getElementById('bat-'+p).innerText='--%';document.getElementById('m-'+p).innerText='--';document.getElementById('r-'+p).innerText='-- dBm';document.getElementById('a-'+p).innerText='Never';b.innerText='WAITING';b.className='badge';card.className='card'}})}catch(e){}}async function pollLogs(){try{const res=await fetch('/api/logs');if(!res.ok)return;const logs=await res.json();const term=document.getElementById('term');term.innerHTML=logs.map(l=>`<div>[+${l.t}s] ${l.msg}</div>`).join('');term.scrollTop=term.scrollHeight}catch(e){}}async function loadSettings(){try{const res=await fetch('/api/settings');if(!res.ok)return;const s=await res.json();document.getElementById('cfg-wifi-ssid').value=s.wifi_ssid||'';document.getElementById('cfg-wifi-pass').value=s.wifi_pass||'';document.getElementById('cfg-try-sta').checked=s.try_sta;document.getElementById('cfg-press-unit').value=s.press_unit;document.getElementById('cfg-temp-unit').value=s.temp_unit;document.getElementById('cfg-min-psi').value=s.min_psi;document.getElementById('cfg-max-psi').value=s.max_psi;document.getElementById('cfg-max-temp').value=s.max_temp;document.getElementById('cfg-min-batt').value=s.min_batt;document.getElementById('cfg-sda-pin').value=s.sda_pin;document.getElementById('cfg-scl-pin').value=s.scl_pin;document.getElementById('cfg-ap-ssid').value=s.ap_ssid;document.getElementById('cfg-ap-pass').value=s.ap_pass;document.getElementById('cfg-demo-mode').checked=s.demo_mode}catch(e){}}async function saveSettings(e){e.preventDefault();const body=new URLSearchParams({wifi_ssid:document.getElementById('cfg-wifi-ssid').value,wifi_pass:document.getElementById('cfg-wifi-pass').value,try_sta:document.getElementById('cfg-try-sta').checked?'true':'false',press_unit:document.getElementById('cfg-press-unit').value,temp_unit:document.getElementById('cfg-temp-unit').value,min_psi:document.getElementById('cfg-min-psi').value,max_psi:document.getElementById('cfg-max-psi').value,max_temp:document.getElementById('cfg-max-temp').value,min_batt:document.getElementById('cfg-min-batt').value,sda_pin:document.getElementById('cfg-sda-pin').value,scl_pin:document.getElementById('cfg-scl-pin').value,ap_ssid:document.getElementById('cfg-ap-ssid').value,ap_pass:document.getElementById('cfg-ap-pass').value,demo_mode:document.getElementById('cfg-demo-mode').checked?'true':'false'});try{const res=await fetch('/api/settings',{method:'POST',body});if(res.ok){const t=document.getElementById('toast');t.style.display='block';setTimeout(()=>t.style.display='none',3000)}}catch(e){}}setInterval(poll,1000);setInterval(pollLogs,2000);poll();pollLogs();</script></body></html>)rawliteral";
 #endif
 
 WebServerManager::WebServerManager()
@@ -293,7 +24,7 @@ void WebServerManager::begin() {
 
         unsigned long startMs = millis();
         while (WiFi.status() != WL_CONNECTED && (millis() - startMs < (unsigned long)STA_TIMEOUT_S * 1000)) {
-            delay(300);
+            delay(250);
             Serial.print(".");
         }
         Serial.println();
@@ -302,9 +33,7 @@ void WebServerManager::begin() {
             staConnected = true;
             m_ipAddress = WiFi.localIP().toString();
             m_wifiModeStr = "STA (" + ConfigMgr.wifi_ssid + ")";
-            Logger.addLog("[Wi-Fi] Connected to %s | IP: http://%s", ConfigMgr.wifi_ssid.c_str(), m_ipAddress.c_str());
-        } else {
-            Serial.println("[Wi-Fi] STA connection timed out!");
+            Logger.addLog("[Wi-Fi] Connected! IP: http://%s", m_ipAddress.c_str());
         }
     }
 
@@ -329,9 +58,7 @@ void WebServerManager::begin() {
             m_ipAddress = WiFi.softAPIP().toString();
             m_wifiModeStr = "AP (" + ConfigMgr.ap_ssid + ")";
             m_dnsServer.start(53, "*", local_IP);
-            Logger.addLog("[Wi-Fi] SoftAP Active! Connect to '%s' | URL: http://%s", ConfigMgr.ap_ssid.c_str(), m_ipAddress.c_str());
-        } else {
-            Logger.addLog("[Wi-Fi ERROR] SoftAP failed to start '%s'!", ConfigMgr.ap_ssid.c_str());
+            Logger.addLog("[Wi-Fi] SoftAP active: %s | IP: http://%s", ConfigMgr.ap_ssid.c_str(), m_ipAddress.c_str());
         }
     }
 
@@ -409,39 +136,36 @@ void WebServerManager::handlePostSettings() {
 void WebServerManager::handleApiData() {
 #if ENABLE_WEBSERVER
     uint32_t nowMs = millis();
-    uint32_t uptimeS = nowMs / 1000;
+    uint32_t upS = nowMs / 1000;
 
-    String json = "{";
-    json += "\"system\":{";
-    json += "\"uptime_s\":" + String(uptimeS) + ",";
-    json += "\"wifi_mode\":\"" + m_wifiModeStr + "\",";
+    String json;
+    json.reserve(550);
+    json = "{\"sys\":{";
+    json += "\"up\":" + String(upS) + ",";
+    json += "\"wifi\":\"" + m_wifiModeStr + "\",";
     json += "\"ip\":\"" + m_ipAddress + "\",";
-    json += "\"total_ble\":" + String(TreelSensorReceiver.getTotalBlePackets()) + ",";
-    json += "\"tpms_pkts\":" + String(TreelSensorReceiver.getTpmsPackets()) + ",";
-    json += "\"free_heap\":" + String(ESP.getFreeHeap());
-    json += "},";
+    json += "\"ble\":" + String(TreelSensorReceiver.getTotalBlePackets()) + ",";
+    json += "\"tpms\":" + String(TreelSensorReceiver.getTpmsPackets()) + ",";
+    json += "\"heap\":" + String(ESP.getFreeHeap());
+    json += "},\"tires\":{";
 
-    json += "\"tires\":{";
     const char* keys[] = {"FL", "FR", "RL", "RR"};
     for (int i = 0; i < 4; i++) {
         TireData t = TreelSensorReceiver.getTire((TirePosition)i);
         int ageS = t.has_received ? (int)((nowMs - t.last_updated_ms) / 1000) : -1;
-
         json += "\"" + String(keys[i]) + "\":{";
-        json += "\"has_data\":" + String(t.has_received ? "true" : "false") + ",";
-        json += "\"name\":\"" + String(POS_NAMES[i]) + "\",";
-        json += "\"mac\":\"" + t.mac + "\",";
-        json += "\"sensor_id\":\"" + t.sensor_id + "\",";
+        json += "\"has\":" + String(t.has_received ? "true" : "false") + ",";
+        json += "\"mac\":\"" + String(SENSOR_MACS[i]) + "\",";
+        json += "\"id\":\"" + String(t.sensor_id) + "\",";
         json += "\"psi\":" + String(t.pressure_psi, 1) + ",";
         json += "\"bar\":" + String(t.pressure_bar, 2) + ",";
-        json += "\"kpa\":" + String(t.pressure_kpa, 1) + ",";
-        json += "\"temp_c\":" + String(t.temperature_c, 1) + ",";
-        json += "\"temp_f\":" + String(t.temperature_f, 1) + ",";
-        json += "\"battery\":" + String(t.battery_percent) + ",";
+        json += "\"c\":" + String(t.temperature_c, 1) + ",";
+        json += "\"f\":" + String(t.temperature_f, 1) + ",";
+        json += "\"bat\":" + String(t.battery_percent) + ",";
         json += "\"rssi\":" + String(t.rssi) + ",";
-        json += "\"mode\":\"" + t.mode + "\",";
-        json += "\"alert\":\"" + String(t.getAlertString(ConfigMgr.alert_min_psi, ConfigMgr.alert_max_psi, ConfigMgr.alert_max_temp_c, ConfigMgr.alert_min_batt)) + "\",";
-        json += "\"age_s\":" + String(ageS);
+        json += "\"mode\":\"" + String(t.mode) + "\",";
+        json += "\"alt\":\"" + String(t.getAlertString(ConfigMgr.alert_min_psi, ConfigMgr.alert_max_psi, ConfigMgr.alert_max_temp_c, ConfigMgr.alert_min_batt)) + "\",";
+        json += "\"age\":" + String(ageS);
         json += "}";
         if (i < 3) json += ",";
     }

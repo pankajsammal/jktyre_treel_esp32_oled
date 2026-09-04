@@ -6,15 +6,6 @@ DisplayManager Display;
 
 DisplayManager::DisplayManager() : m_u8g2(U8G2_R0, U8X8_PIN_NONE, OLED_SCL_PIN, OLED_SDA_PIN) {}
 
-String DisplayManager::formatAge(unsigned long last_ms, unsigned long now_ms) {
-    if (last_ms == 0) return "WAIT";
-    unsigned long diff = (now_ms - last_ms) / 1000;
-    if (diff < 60) return String(diff) + "s";
-    if (diff < 3600) return String(diff / 60) + "m";
-    if (diff < 86400) return String(diff / 3600) + "h";
-    return String(diff / 86400) + "d";
-}
-
 void DisplayManager::begin() {
     if (!ENABLE_OLED) return;
 
@@ -27,7 +18,6 @@ void DisplayManager::begin() {
     Wire.begin(ConfigMgr.oled_sda_pin, ConfigMgr.oled_scl_pin);
     m_u8g2.begin();
     m_u8g2.clearBuffer();
-
     m_u8g2.setFont(u8g2_font_7x14B_tr);
     m_u8g2.drawStr(14, 22, "TREEL TPMS BLE");
     m_u8g2.setFont(u8g2_font_6x10_tr);
@@ -38,7 +28,7 @@ void DisplayManager::begin() {
     m_initialized = true;
 }
 
-void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int x, int y, unsigned long now_ms) {
+void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int x, int y, uint32_t now_ms) {
     bool has_data = tire.has_received;
     AlertState alert = tire.getAlertState(ConfigMgr.alert_min_psi, ConfigMgr.alert_max_psi, ConfigMgr.alert_max_temp_c, ConfigMgr.alert_min_batt);
     bool is_alert = has_data && (alert != ALERT_NORMAL && alert != ALERT_WAITING);
@@ -70,9 +60,15 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     m_u8g2.drawStr(x + 3, y + 19, tempBuf);
 
     // 3. Bottom-Left: Age (e.g. 50s, 2m, WAIT)
-    String ageStr = has_data ? formatAge(tire.last_updated_ms, now_ms) : "WAIT";
+    char ageBuf[8] = "WAIT";
+    if (has_data) {
+        uint32_t diff = (now_ms - tire.last_updated_ms) / 1000;
+        if (diff < 60) snprintf(ageBuf, sizeof(ageBuf), "%us", diff);
+        else if (diff < 3600) snprintf(ageBuf, sizeof(ageBuf), "%um", diff / 60);
+        else snprintf(ageBuf, sizeof(ageBuf), "%uh", diff / 3600);
+    }
     m_u8g2.setFont(u8g2_font_5x8_tr);
-    m_u8g2.drawStr(x + 3, y + 26, ageStr.c_str());
+    m_u8g2.drawStr(x + 3, y + 26, ageBuf);
 
     // 4. Right Side: Pressure Digits
     // For KPA (3 digits like 225), use logisoso18_tn and align to x + 53 (shifted 2px further left)
@@ -88,7 +84,7 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
     } else {
         if (ConfigMgr.display_pressure_unit == UNIT_BAR) {
             if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.1f", tire.pressure_bar);
-        } else { // UNIT_PSI (Default)
+        } else { // UNIT_PSI
             if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%d", (int)roundf(tire.pressure_psi));
         }
         m_u8g2.setFont(u8g2_font_logisoso24_tn);
@@ -101,9 +97,8 @@ void DisplayManager::renderCard(const TireData& tire, const char* posLabel, int 
 
 void DisplayManager::render(const TireData tires[4]) {
     if (!ENABLE_OLED || !m_initialized) return;
-
     m_u8g2.clearBuffer();
-    unsigned long now_ms = millis();
+    uint32_t now_ms = millis();
 
     m_u8g2.setDrawColor(1);
 

@@ -29,8 +29,8 @@ enum AlertState {
 };
 
 struct TireData {
-    String mac;
-    String sensor_id;
+    char mac[18] = {0};
+    char sensor_id[16] = {0};
     TirePosition position = POS_UNKNOWN;
     float pressure_psi = 0.0f;
     float pressure_bar = 0.0f;
@@ -39,20 +39,26 @@ struct TireData {
     float temperature_f = 32.0f;
     int battery_percent = -1;
     int rssi = -100;
-    String mode = "--";
-    unsigned long last_updated_ms = 0;
+    char mode[12] = {0};
+    uint32_t last_updated_ms = 0;
     bool has_received = false;
 
-    void update(float psi, float tempC, int batt, int sigRssi, const String& decMode, const String& sId) {
+    void update(float psi, float tempC, int batt, int sigRssi, const char* decMode, const char* sId) {
         pressure_psi = psi;
         pressure_bar = psi * 0.0689476f;
         pressure_kpa = psi * 6.89476f;
         temperature_c = tempC;
         temperature_f = (tempC * 9.0f / 5.0f) + 32.0f;
-        if (batt >= 0) battery_percent = batt; // Retain battery level across beacon frames
+        if (batt >= 0) battery_percent = batt;
         rssi = sigRssi;
-        mode = decMode;
-        if (sId.length() > 0) sensor_id = sId;
+        if (decMode) {
+            strncpy(mode, decMode, sizeof(mode) - 1);
+            mode[sizeof(mode) - 1] = '\0';
+        }
+        if (sId && strlen(sId) > 0) {
+            strncpy(sensor_id, sId, sizeof(sensor_id) - 1);
+            sensor_id[sizeof(sensor_id) - 1] = '\0';
+        }
         last_updated_ms = millis();
         has_received = true;
     }
@@ -65,8 +71,8 @@ struct TireData {
         temperature_f = 32.0f;
         battery_percent = -1;
         rssi = -100;
-        mode = "--";
-        sensor_id = "";
+        mode[0] = '\0';
+        sensor_id[0] = '\0';
         last_updated_ms = 0;
         has_received = false;
     }
@@ -94,34 +100,64 @@ struct TireData {
 
 typedef void (*TPMSCallback)(const TireData& tire);
 
+class FastTreelDecoder {
+public:
+    static TirePosition resolvePositionByAddress(const NimBLEAddress& addr, const uint8_t whitelistedMacs[4][6]);
+    static TirePosition resolvePositionByPayloadSignature(const uint8_t* data, size_t len, const uint8_t whitelistedSigs[4][3]);
+    static bool decodeBeacon(const uint8_t* payload, size_t len, float& outPsi, float& outTemp, char* outSensorId, size_t idBufSize);
+    static bool decodeGATT(const uint8_t* payload, size_t len, float& outPsi, float& outTemp, int& outBatt, char* outSensorId, size_t idBufSize);
+};
+
 class TreelTPMS {
 private:
     static mbedtls_aes_context s_aesCtx;
     static bool s_aesInit;
-    
-    String m_whitelistedMacs[4];
-    String m_whitelistedShortIds[4];
+
+    uint8_t m_whitelistedMacBins[4][6];
+    uint8_t m_whitelistedSigs[4][3];
+    char m_whitelistedMacStrs[4][18];
+    bool m_hasWhitelist = false;
+
     TireData m_tires[4];
     TPMSCallback m_userCallback = nullptr;
-    
+
     volatile uint32_t m_totalBlePackets = 0;
     volatile uint32_t m_tpmsPackets = 0;
 
-    // Demo / Test Mode (Simulates normal & warning states)
+    bool m_demoMode = false;
+    unsigned long m_lastDemoStepMs = 0;
+    int m_demoStep = 0;
+
+    void runDemoStep();
+
+public:
+    TreelTPMS();
+
+    void begin(bool activeScan = false);
+    void setWhitelist(const char* const macs[4], const char* const shortIds[4] = nullptr);
+    void setCallback(TPMSCallback callback);
+
+    TireData getTire(TirePosition pos) const;
+    const TireData* getAllTires() const { return m_tires; }
+
+    uint32_t getTotalBlePackets() const { return m_totalBlePackets; }
+    uint32_t getTpmsPackets() const { return m_tpmsPackets; }
+
     void setDemoMode(bool enable);
     bool isDemoMode() const { return m_demoMode; }
-    void update(); // Main periodic update loop (handles demo mode simulation)
+    void update();
     void clearAllTires();
 
     void processAdvertisedDevice(const NimBLEAdvertisedDevice* advertisedDevice);
 
-private:
-    bool m_demoMode = false;
-    unsigned long m_lastDemoStepMs = 0;
-    int m_demoStep = 0;
-    void runDemoStep();
+    static void initAES();
+    static inline bool fastDecryptAES128(const uint8_t* ciphertext, uint8_t* plaintext) {
+        if (!s_aesInit) initAES();
+        return (mbedtls_aes_crypt_ecb(&s_aesCtx, MBEDTLS_AES_DECRYPT, ciphertext, plaintext) == 0);
+    }
 };
 
 extern TreelTPMS TreelSensorReceiver;
 
 #endif // TREEL_TPMS_H
+

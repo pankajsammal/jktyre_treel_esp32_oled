@@ -31,7 +31,7 @@ void onTireUpdate(const TireData& tire) {
                   tire.pressure_bar,
                   tire.temperature_c,
                   tire.battery_percent,
-                  tire.mode.c_str(),
+                  tire.mode,
                   tire.rssi);
 }
 

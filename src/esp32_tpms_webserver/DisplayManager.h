@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <U8g2lib.h>
-#include <TreelTPMS.h>
+#include "TreelTPMS.h"
 #include "Config.h"
 
 class DisplayManager {
@@ -16,8 +16,7 @@ private:
 #endif
     bool m_initialized = false;
 
-    static String formatAge(unsigned long last_ms, unsigned long now_ms);
-    void renderCard(const TireData& tire, const char* posLabel, int x, int y, unsigned long now_ms);
+    void renderCard(const TireData& tire, const char* posLabel, int x, int y, uint32_t now_ms);
 
 public:
     DisplayManager();

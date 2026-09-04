@@ -66,25 +66,18 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 │   └── WINDOWS_CLI_GUIDE.md           # Step-by-step setup for Windows Python CLI tool
 ├── lib/                               # Reusable C++ Libraries
 │   └── TreelTPMS/                     # Standalone C++ Treel TPMS BLE Library
-│       ├── TreelTPMS.h                # Header-only/exportable library API
+│       ├── TreelTPMS.h                # Zero-allocation high performance BLE receiver API
 │       ├── TreelTPMS.cpp              # AES-128 & iBeacon decoder implementation
 │       └── examples/
-│           └── BasicScanner/          # Standalone minimal 30-line Arduino example
-├── src/                               # ESP32 Modular Applications
-│   ├── esp32_tpms_webserver/          # Tested Modular Firmware for Standard ESP32 (30/38 Pin)
-│   │   ├── Config.h                   # Pins, Wi-Fi credentials & sensor whitelist
-│   │   ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
-│   │   ├── TreelTPMS.h / .cpp         # Core BLE receiver engine
-│   │   ├── DisplayManager.h / .cpp    # I2C OLED display renderer
-│   │   ├── WebServerManager.h / .cpp  # Web dashboard & REST API
-│   │   └── esp32_tpms_webserver.ino   # Clean ~45-line entry point sketch
-│   └── esp32_c3_tpms_webserver/       # Tested Modular Firmware for ESP32-C3 SuperMini
-│       ├── Config.h                   # Pinout & fast timeout configuration
-│       ├── Logger.h / Logger.cpp      # Zero-heap log buffer
-│       ├── TreelTPMS.h / .cpp         # RISC-V zero-allocation scanner
-│       ├── DisplayManager.h / .cpp    # Display driver
+│           └── BasicScanner/          # Standalone minimal Arduino example
+├── src/                               # ESP32 Modular Application
+│   └── esp32_tpms_webserver/          # Unified Firmware (Supports Standard ESP32 & ESP32-C3)
+│       ├── Config.h                   # Pins (auto-detects ESP32 vs C3), Wi-Fi & sensor whitelist
+│       ├── ConfigManager.h / .cpp     # NVS Flash persistent settings manager
+│       ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
+│       ├── DisplayManager.h / .cpp    # Zero-heap I2C OLED display renderer
 │       ├── WebServerManager.h / .cpp  # Web dashboard & REST API
-│       └── esp32_c3_tpms_webserver.ino# Clean entry point sketch
+│       └── esp32_tpms_webserver.ino   # Main entry point sketch
 └── tools/                             # Desktop Tools
     └── python_tpms_app/               # Windows Python BLE Sniffer & Diagnostics
         ├── core/                      # Decoder & Scanner modules

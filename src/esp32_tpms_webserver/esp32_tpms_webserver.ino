@@ -5,7 +5,7 @@
 // =====================================================================
 
 #include <Arduino.h>
-#include <TreelTPMS.h>
+#include "TreelTPMS.h"
 #include "Config.h"
 #include "ConfigManager.h"
 #include "Logger.h"
@@ -17,8 +17,8 @@ void onTirePacketReceived(const TireData& tire) {
     const char* posAbbr[] = {"FL", "FR", "RL", "RR"};
     if (tire.position < POS_UNKNOWN) {
         Logger.addLog("[TPMS-%s] %s | %.1f PSI (%.2f Bar) | %.1f C | Batt: %d%% | %s | RSSI: %d dBm",
-                      posAbbr[tire.position], tire.mac.c_str(), tire.pressure_psi, tire.pressure_bar,
-                      tire.temperature_c, tire.battery_percent, tire.mode.c_str(), tire.rssi);
+                      posAbbr[tire.position], tire.mac, tire.pressure_psi, tire.pressure_bar,
+                      tire.temperature_c, tire.battery_percent, tire.mode, tire.rssi);
     }
 }
 

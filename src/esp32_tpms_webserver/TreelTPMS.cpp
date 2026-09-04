@@ -9,26 +9,64 @@ static const uint8_t TREEL_BEACON_UUID[16] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xE0
 };
 
-mbedtls_aes_context TreelTPMSC3::s_aesCtx;
-bool TreelTPMSC3::s_aesInit = false;
+mbedtls_aes_context TreelTPMS::s_aesCtx;
+bool TreelTPMS::s_aesInit = false;
 
-TreelTPMSC3 TreelSensorReceiverC3;
+TreelTPMS TreelSensorReceiver;
 
-class FastAdvertisedDeviceCallbacks : public NimBLEScanCallbacks {
-    void onDiscovered(const NimBLEAdvertisedDevice* dev) override {
-        TreelSensorReceiverC3.processDevice(dev);
+class TreelNimBLEScanCallbacks : public NimBLEScanCallbacks {
+    void onDiscovered(const NimBLEAdvertisedDevice* advertisedDevice) override {
+        TreelSensorReceiver.processAdvertisedDevice(advertisedDevice);
     }
 };
 
-TreelTPMSC3::TreelTPMSC3() {
+static int parseHexNibble(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+static bool parseMacStringToBin(const char* str, uint8_t bin[6]) {
+    if (!str) return false;
+    int bytesParsed = 0;
+    const char* p = str;
+    while (*p && bytesParsed < 6) {
+        if (*p == ':' || *p == '-') { p++; continue; }
+        int n1 = parseHexNibble(*p++);
+        if (n1 < 0 || !*p) break;
+        int n2 = parseHexNibble(*p++);
+        if (n2 < 0) break;
+        bin[bytesParsed++] = (uint8_t)((n1 << 4) | n2);
+    }
+    return (bytesParsed == 6);
+}
+
+static bool parseShortIdStringToBin(const char* str, uint8_t sig[3]) {
+    if (!str) return false;
+    int bytesParsed = 0;
+    const char* p = str;
+    while (*p && bytesParsed < 3) {
+        if (*p == ':' || *p == '-') { p++; continue; }
+        int n1 = parseHexNibble(*p++);
+        if (n1 < 0 || !*p) break;
+        int n2 = parseHexNibble(*p++);
+        if (n2 < 0) break;
+        sig[bytesParsed++] = (uint8_t)((n1 << 4) | n2);
+    }
+    return (bytesParsed == 3);
+}
+
+TreelTPMS::TreelTPMS() {
+    memset(m_whitelistedMacBins, 0, sizeof(m_whitelistedMacBins));
+    memset(m_whitelistedSigs, 0, sizeof(m_whitelistedSigs));
+    memset(m_whitelistedMacStrs, 0, sizeof(m_whitelistedMacStrs));
     for (int i = 0; i < 4; i++) {
-        strncpy(m_tires[i].mac, SENSOR_MAC_STRS[i], sizeof(m_tires[i].mac) - 1);
         m_tires[i].position = (TirePosition)i;
-        m_tires[i].has_received = false;
     }
 }
 
-void TreelTPMSC3::initAES() {
+void TreelTPMS::initAES() {
     if (!s_aesInit) {
         mbedtls_aes_init(&s_aesCtx);
         mbedtls_aes_setkey_dec(&s_aesCtx, AES_KEY, 128);
@@ -36,7 +74,31 @@ void TreelTPMSC3::initAES() {
     }
 }
 
-void TreelTPMSC3::setDemoMode(bool enable) {
+void TreelTPMS::setWhitelist(const char* const macs[4], const char* const shortIds[4]) {
+    m_hasWhitelist = false;
+    memset(m_whitelistedMacBins, 0, sizeof(m_whitelistedMacBins));
+    memset(m_whitelistedSigs, 0, sizeof(m_whitelistedSigs));
+    memset(m_whitelistedMacStrs, 0, sizeof(m_whitelistedMacStrs));
+
+    for (int i = 0; i < 4; i++) {
+        m_tires[i].position = (TirePosition)i;
+        if (macs && macs[i]) {
+            strncpy(m_whitelistedMacStrs[i], macs[i], sizeof(m_whitelistedMacStrs[i]) - 1);
+            strncpy(m_tires[i].mac, macs[i], sizeof(m_tires[i].mac) - 1);
+            parseMacStringToBin(macs[i], m_whitelistedMacBins[i]);
+            m_hasWhitelist = true;
+        }
+        if (shortIds && shortIds[i]) {
+            parseShortIdStringToBin(shortIds[i], m_whitelistedSigs[i]);
+        } else if (macs && macs[i]) {
+            m_whitelistedSigs[i][0] = m_whitelistedMacBins[i][3];
+            m_whitelistedSigs[i][1] = m_whitelistedMacBins[i][4];
+            m_whitelistedSigs[i][2] = m_whitelistedMacBins[i][5];
+        }
+    }
+}
+
+void TreelTPMS::setDemoMode(bool enable) {
     bool wasDemo = m_demoMode;
     m_demoMode = enable;
     if (enable) {
@@ -47,13 +109,13 @@ void TreelTPMSC3::setDemoMode(bool enable) {
     }
 }
 
-void TreelTPMSC3::clearAllTires() {
+void TreelTPMS::clearAllTires() {
     for (int i = 0; i < 4; i++) {
         m_tires[i].clear();
     }
 }
 
-void TreelTPMSC3::update() {
+void TreelTPMS::update() {
     if (m_demoMode) {
         if (millis() - m_lastDemoStepMs >= 4000 || m_lastDemoStepMs == 0) {
             m_lastDemoStepMs = millis();
@@ -62,7 +124,7 @@ void TreelTPMSC3::update() {
     }
 }
 
-void TreelTPMSC3::runDemoStep() {
+void TreelTPMS::runDemoStep() {
     m_totalBlePackets += 4;
     m_tpmsPackets += 4;
 
@@ -81,48 +143,67 @@ void TreelTPMSC3::runDemoStep() {
     int s = m_demoStep % 4;
     for (int i = 0; i < 4; i++) {
         m_tires[i].update(stepVals[s][i].psi, stepVals[s][i].temp, stepVals[s][i].batt, -65, stepVals[s][i].mode, "DEMO-ID");
-        if (m_callback) {
-            m_callback(m_tires[i]);
+        if (m_userCallback) {
+            m_userCallback(m_tires[i]);
         }
     }
     m_demoStep++;
 }
 
-void TreelTPMSC3::begin(TPMSCallbackC3 callback) {
-    m_callback = callback;
-    initAES();
+void TreelTPMS::setCallback(TPMSCallback callback) {
+    m_userCallback = callback;
+}
 
-    NimBLEDevice::init("ESP32C3-TPMS");
+void TreelTPMS::begin(bool activeScan) {
+    initAES();
+    NimBLEDevice::init("ESP32-TPMS");
     NimBLEScan* pScan = NimBLEDevice::getScan();
-    pScan->setScanCallbacks(new FastAdvertisedDeviceCallbacks(), true);
-    pScan->setActiveScan(false);
+    pScan->setScanCallbacks(new TreelNimBLEScanCallbacks(), true);
+    pScan->setActiveScan(activeScan);
     pScan->setInterval(160); // 100 ms scan interval
     pScan->setWindow(40);    // 25 ms scan window (leaves 75% RF radio time for Wi-Fi SoftAP & Web Server)
     pScan->setDuplicateFilter(false);
-    pScan->setMaxResults(0);
+    pScan->setMaxResults(0); // Memory leak prevention for non-stop scanning
     pScan->start(0, false);
 }
 
-TirePosition FastTreelDecoder::resolvePositionByAddress(const NimBLEAddress& addr) {
-    std::string str = addr.toString();
-    for (char& c : str) {
-        if (c >= 'a' && c <= 'z') c -= 32;
+TireData TreelTPMS::getTire(TirePosition pos) const {
+    if (pos >= POS_FL && pos <= POS_RR) {
+        return m_tires[pos];
     }
-    for (int i = 0; i < 4; i++) {
-        if (str.find(SENSOR_MAC_STRS[i]) != std::string::npos) {
-            return (TirePosition)i;
+    return TireData();
+}
+
+TirePosition FastTreelDecoder::resolvePositionByAddress(const NimBLEAddress& addr, const uint8_t whitelistedMacs[4][6]) {
+    std::string str = addr.toString();
+    if (str.length() == 17) {
+        uint8_t addrBin[6];
+        int idx = 0;
+        for (size_t i = 0; i < 17; i += 3) {
+            int n1 = parseHexNibble(str[i]);
+            int n2 = parseHexNibble(str[i+1]);
+            if (n1 >= 0 && n2 >= 0 && idx < 6) {
+                addrBin[idx++] = (uint8_t)((n1 << 4) | n2);
+            }
+        }
+        if (idx == 6) {
+            for (int i = 0; i < 4; i++) {
+                if (memcmp(addrBin, whitelistedMacs[i], 6) == 0) {
+                    return (TirePosition)i;
+                }
+            }
         }
     }
     return POS_UNKNOWN;
 }
 
-TirePosition FastTreelDecoder::resolvePositionByPayloadSignature(const uint8_t* data, size_t len) {
+TirePosition FastTreelDecoder::resolvePositionByPayloadSignature(const uint8_t* data, size_t len, const uint8_t whitelistedSigs[4][3]) {
     if (!data || len < 3) return POS_UNKNOWN;
     for (size_t offset = 0; offset <= len - 3; offset++) {
         for (int i = 0; i < 4; i++) {
-            if (data[offset]     == SENSOR_SHORT_SIGS[i][0] &&
-                data[offset + 1] == SENSOR_SHORT_SIGS[i][1] &&
-                data[offset + 2] == SENSOR_SHORT_SIGS[i][2]) {
+            if (data[offset]     == whitelistedSigs[i][0] &&
+                data[offset + 1] == whitelistedSigs[i][1] &&
+                data[offset + 2] == whitelistedSigs[i][2]) {
                 return (TirePosition)i;
             }
         }
@@ -160,7 +241,7 @@ bool FastTreelDecoder::decodeGATT(const uint8_t* payload, size_t len, float& out
     if (!payload || len < 16) return false;
     uint8_t dec[16];
     for (size_t offset = 0; offset <= len - 16; offset++) {
-        if (!TreelTPMSC3::fastDecryptAES128(payload + offset, dec)) continue;
+        if (!TreelTPMS::fastDecryptAES128(payload + offset, dec)) continue;
         if (dec[0] != 0x16) continue;
 
         uint16_t rawTemp = dec[1] | (dec[2] << 8);
@@ -183,29 +264,36 @@ bool FastTreelDecoder::decodeGATT(const uint8_t* payload, size_t len, float& out
     return false;
 }
 
-void TreelTPMSC3::processDevice(const NimBLEAdvertisedDevice* dev) {
-    if (!dev) return;
+void TreelTPMS::processAdvertisedDevice(const NimBLEAdvertisedDevice* advertisedDevice) {
+    if (!advertisedDevice) return;
     m_totalBlePackets++;
 
-    TirePosition pos = FastTreelDecoder::resolvePositionByAddress(dev->getAddress());
+    TirePosition pos = POS_UNKNOWN;
+    if (m_hasWhitelist) {
+        pos = FastTreelDecoder::resolvePositionByAddress(advertisedDevice->getAddress(), m_whitelistedMacBins);
+    }
 
-    const std::vector<uint8_t>& payloadVec = dev->getPayload();
+    const std::vector<uint8_t>& payloadVec = advertisedDevice->getPayload();
     const uint8_t* payload = payloadVec.data();
     size_t payloadLen = payloadVec.size();
 
-    std::string mfgStr = dev->getManufacturerData();
+    std::string mfgStr = advertisedDevice->getManufacturerData();
     const uint8_t* mfgData = (const uint8_t*)mfgStr.data();
     size_t mfgLen = mfgStr.length();
 
-    if (pos >= POS_UNKNOWN) {
-        if (mfgData && mfgLen >= 3) pos = FastTreelDecoder::resolvePositionByPayloadSignature(mfgData, mfgLen);
-        if (pos >= POS_UNKNOWN && payload && payloadLen >= 3) pos = FastTreelDecoder::resolvePositionByPayloadSignature(payload, payloadLen);
+    if (pos >= POS_UNKNOWN && m_hasWhitelist) {
+        if (mfgData && mfgLen >= 3) {
+            pos = FastTreelDecoder::resolvePositionByPayloadSignature(mfgData, mfgLen, m_whitelistedSigs);
+        }
+        if (pos >= POS_UNKNOWN && payload && payloadLen >= 3) {
+            pos = FastTreelDecoder::resolvePositionByPayloadSignature(payload, payloadLen, m_whitelistedSigs);
+        }
     }
 
     if (pos >= POS_UNKNOWN) return;
 
     m_tpmsPackets++;
-    int rssi = dev->getRSSI();
+    int rssi = advertisedDevice->getRSSI();
 
     float psi = 0.0f, tempC = 0.0f;
     int batt = -1;
@@ -235,8 +323,8 @@ void TreelTPMSC3::processDevice(const NimBLEAdvertisedDevice* dev) {
 
     if (decoded) {
         m_tires[pos].update(psi, tempC, batt, rssi, decMode, sensorId);
-        if (m_callback) {
-            m_callback(m_tires[pos]);
+        if (m_userCallback) {
+            m_userCallback(m_tires[pos]);
         }
     }
 }

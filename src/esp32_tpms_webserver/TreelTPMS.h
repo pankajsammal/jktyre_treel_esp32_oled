@@ -1,11 +1,11 @@
-#ifndef TREEL_TPMS_C3_H
-#define TREEL_TPMS_C3_H
+#ifndef TREEL_TPMS_H
+#define TREEL_TPMS_H
 
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 #include "mbedtls/aes.h"
-#include "Config.h"
 
+// Alert Thresholds
 #define ALERT_MIN_PSI     26.0f
 #define ALERT_MAX_PSI     45.0f
 #define ALERT_MAX_TEMP_C  70.0f
@@ -29,9 +29,9 @@ enum AlertState {
 };
 
 struct TireData {
-    char mac[18];
-    char sensor_id[12];
-    TirePosition position;
+    char mac[18] = {0};
+    char sensor_id[16] = {0};
+    TirePosition position = POS_UNKNOWN;
     float pressure_psi = 0.0f;
     float pressure_bar = 0.0f;
     float pressure_kpa = 0.0f;
@@ -39,7 +39,7 @@ struct TireData {
     float temperature_f = 32.0f;
     int battery_percent = -1;
     int rssi = -100;
-    char mode[12];
+    char mode[12] = {0};
     uint32_t last_updated_ms = 0;
     bool has_received = false;
 
@@ -51,8 +51,14 @@ struct TireData {
         temperature_f = (tempC * 9.0f / 5.0f) + 32.0f;
         if (batt >= 0) battery_percent = batt;
         rssi = sigRssi;
-        strncpy(mode, decMode, sizeof(mode) - 1);
-        if (sId && strlen(sId) > 0) strncpy(sensor_id, sId, sizeof(sensor_id) - 1);
+        if (decMode) {
+            strncpy(mode, decMode, sizeof(mode) - 1);
+            mode[sizeof(mode) - 1] = '\0';
+        }
+        if (sId && strlen(sId) > 0) {
+            strncpy(sensor_id, sId, sizeof(sensor_id) - 1);
+            sensor_id[sizeof(sensor_id) - 1] = '\0';
+        }
         last_updated_ms = millis();
         has_received = true;
     }
@@ -92,33 +98,46 @@ struct TireData {
     }
 };
 
-typedef void (*TPMSCallbackC3)(const TireData& tire);
+typedef void (*TPMSCallback)(const TireData& tire);
 
 class FastTreelDecoder {
 public:
-    static TirePosition resolvePositionByAddress(const NimBLEAddress& addr);
-    static TirePosition resolvePositionByPayloadSignature(const uint8_t* data, size_t len);
+    static TirePosition resolvePositionByAddress(const NimBLEAddress& addr, const uint8_t whitelistedMacs[4][6]);
+    static TirePosition resolvePositionByPayloadSignature(const uint8_t* data, size_t len, const uint8_t whitelistedSigs[4][3]);
     static bool decodeBeacon(const uint8_t* payload, size_t len, float& outPsi, float& outTemp, char* outSensorId, size_t idBufSize);
     static bool decodeGATT(const uint8_t* payload, size_t len, float& outPsi, float& outTemp, int& outBatt, char* outSensorId, size_t idBufSize);
 };
 
-class TreelTPMSC3 {
+class TreelTPMS {
 private:
     static mbedtls_aes_context s_aesCtx;
     static bool s_aesInit;
 
+    uint8_t m_whitelistedMacBins[4][6];
+    uint8_t m_whitelistedSigs[4][3];
+    char m_whitelistedMacStrs[4][18];
+    bool m_hasWhitelist = false;
+
     TireData m_tires[4];
-    TPMSCallbackC3 m_callback = nullptr;
+    TPMSCallback m_userCallback = nullptr;
+
     volatile uint32_t m_totalBlePackets = 0;
     volatile uint32_t m_tpmsPackets = 0;
 
+    bool m_demoMode = false;
+    unsigned long m_lastDemoStepMs = 0;
+    int m_demoStep = 0;
+
+    void runDemoStep();
+
 public:
-    TreelTPMSC3();
+    TreelTPMS();
 
-    void begin(TPMSCallbackC3 callback = nullptr);
-    void processDevice(const NimBLEAdvertisedDevice* dev);
+    void begin(bool activeScan = false);
+    void setWhitelist(const char* const macs[4], const char* const shortIds[4] = nullptr);
+    void setCallback(TPMSCallback callback);
 
-    TireData getTire(TirePosition pos) const { return m_tires[pos]; }
+    TireData getTire(TirePosition pos) const;
     const TireData* getAllTires() const { return m_tires; }
 
     uint32_t getTotalBlePackets() const { return m_totalBlePackets; }
@@ -129,18 +148,15 @@ public:
     void update();
     void clearAllTires();
 
+    void processAdvertisedDevice(const NimBLEAdvertisedDevice* advertisedDevice);
+
     static void initAES();
     static inline bool fastDecryptAES128(const uint8_t* ciphertext, uint8_t* plaintext) {
+        if (!s_aesInit) initAES();
         return (mbedtls_aes_crypt_ecb(&s_aesCtx, MBEDTLS_AES_DECRYPT, ciphertext, plaintext) == 0);
     }
-
-private:
-    bool m_demoMode = false;
-    uint32_t m_lastDemoStepMs = 0;
-    int m_demoStep = 0;
-    void runDemoStep();
 };
 
-extern TreelTPMSC3 TreelSensorReceiverC3;
+extern TreelTPMS TreelSensorReceiver;
 
-#endif // TREEL_TPMS_C3_H
+#endif // TREEL_TPMS_H
