@@ -1,9 +1,9 @@
 # ESP32-C3 SuperMini Setup Guide — Treel TPMS BLE Receiver
 
-This step-by-step guide explains how to configure, wire, and flash the dedicated, tested **ESP32-C3 SuperMini Treel TPMS BLE Receiver & Web Server** firmware located at [`src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino`](file:///d:/projects/jktyre_treel_esp32/src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino).
+This step-by-step guide explains how to configure, wire, and flash the unified **Treel TPMS BLE Receiver & Web Server** firmware located at [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](file:///d:/projects/jktyre_treel_esp32/src/esp32_tpms_webserver/esp32_tpms_webserver.ino) on an **ESP32-C3 SuperMini** board.
 
 > [!NOTE]
-> The ESP32-C3 SuperMini uses a single-core RISC-V architecture. Use the dedicated firmware under `src/esp32_c3_tpms_webserver/` which is specifically optimized and tested for the ESP32-C3.
+> The ESP32-C3 SuperMini uses a single-core RISC-V architecture. The unified firmware under `src/esp32_tpms_webserver/` automatically detects the ESP32-C3 hardware target and sets default I2C pins (GPIO 8/9), zero-heap scanning, and hardware AES decryption.
 
 ---
 
@@ -28,6 +28,7 @@ Before flashing the sketch, set the correct board parameters in Arduino IDE:
 | :--- | :--- | :--- |
 | **Board** | **ESP32C3 Dev Module** | Core board selection |
 | **USB CDC On Boot** | **Enabled** | **CRITICAL:** Must be Enabled for Serial Monitor output over USB-C! |
+| **Partition Scheme** | **Huge APP (3MB No OTA/1MB SPIFFS)** | **CRITICAL:** Prevents flash size compilation errors on C3! |
 | **Flash Frequency** | **80MHz** | Standard flash speed |
 | **Flash Mode** | **QIO** (or DIO) | Flash memory mode |
 | **Flash Size** | **4MB (32Mb)** | Standard SuperMini flash size |
@@ -80,9 +81,9 @@ Use standard hardware I2C pins (GPIO 8 & GPIO 9) on the left header:
 
 ---
 
-### Option B: 100% Single-Side Wiring (Right Header Consecutive Pins)
+### Option B: Custom Wiring (Right Header Pins)
 
-Wire all 4 display pins cleanly to consecutive pins on the right header:
+Wire display pins cleanly to custom GPIOs on the right header:
 
 | OLED Display Pin | ESP32-C3 Pin | Location on Board |
 | :--- | :--- | :--- |
@@ -91,7 +92,7 @@ Wire all 4 display pins cleanly to consecutive pins on the right header:
 | **SDA** | **GPIO 4** | Right Header, Pin 4 |
 | **SCL** | **GPIO 3** | Right Header, Pin 5 |
 
-*If using Option B, update pin definitions in `esp32_tpms_webserver.ino`:*
+*If using Option B, update pin definitions in [`src/esp32_tpms_webserver/Config.h`](file:///d:/projects/jktyre_treel_esp32/src/esp32_tpms_webserver/Config.h):*
 ```cpp
 #define OLED_SDA_PIN 4
 #define OLED_SCL_PIN 3
@@ -102,7 +103,7 @@ Wire all 4 display pins cleanly to consecutive pins on the right header:
 ## 5. Running Headless (No Display Mode)
 
 If you are placing the board inside a car dashboard without a screen:
-In `esp32_tpms_webserver.ino`:
+In [`src/esp32_tpms_webserver/Config.h`](file:///d:/projects/jktyre_treel_esp32/src/esp32_tpms_webserver/Config.h):
 ```cpp
 #define ENABLE_OLED false
 ```
