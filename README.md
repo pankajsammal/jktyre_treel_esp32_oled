@@ -23,10 +23,8 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
   - `GET /api/data`: Returns JSON telemetry state for all 4 tires, free heap, uptime, and packet counters.
   - `GET /api/logs`: Returns recent system logs.
   - `GET /api/clear`: Clears rolling log buffer.
-- **Dual Wi-Fi Modes**: Tries connecting to your Wi-Fi router (STA mode) first; automatically falls back to Access Point mode (`ESP32_TPMS_Dashboard` / `12345678`).
 - **Optional OLED Display**: Supports 1.3" SH1106 and 0.96" SSD1306 I2C OLED screens with a 4-quadrant layout.
 - **Headless Mode**: Can run completely headless as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway inside your vehicle.
-- **Windows Desktop CLI & Diagnostic Tools**: Included Python CLI sniffer tool for Windows PC.
 
 ---
 
@@ -62,28 +60,21 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 ├── .gitignore                         # Git exclusion rules
 ├── docs/                              # Detailed Documentation & Guides
 │   ├── PROTOCOL_SPECIFICATION.md      # Deep-dive BLE protocol & AES telemetry specification
-│   ├── ESP32_C3_SUPERMINI_GUIDE.md    # Dedicated setup & pinout guide for ESP32-C3 SuperMini
-│   └── WINDOWS_CLI_GUIDE.md           # Step-by-step setup for Windows Python CLI tool
+│   └── ESP32_C3_SUPERMINI_GUIDE.md    # Dedicated setup & pinout guide for ESP32-C3 SuperMini
 ├── lib/                               # Reusable C++ Libraries
 │   └── TreelTPMS/                     # Standalone C++ Treel TPMS BLE Library
 │       ├── TreelTPMS.h                # Zero-allocation high performance BLE receiver API
 │       ├── TreelTPMS.cpp              # AES-128 & iBeacon decoder implementation
 │       └── examples/
 │           └── BasicScanner/          # Standalone minimal Arduino example
-├── src/                               # ESP32 Modular Application
-│   └── esp32_tpms_webserver/          # Unified Firmware (Supports Standard ESP32 & ESP32-C3)
-│       ├── Config.h                   # Pins (auto-detects ESP32 vs C3), Wi-Fi & sensor whitelist
-│       ├── ConfigManager.h / .cpp     # NVS Flash persistent settings manager
-│       ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
-│       ├── DisplayManager.h / .cpp    # Zero-heap I2C OLED display renderer
-│       ├── WebServerManager.h / .cpp  # Web dashboard & REST API
-│       └── esp32_tpms_webserver.ino   # Main entry point sketch
-└── tools/                             # Desktop Tools
-    └── python_tpms_app/               # Windows Python BLE Sniffer & Diagnostics
-        ├── core/                      # Decoder & Scanner modules
-        ├── tpms_cli.py                # Command-Line live sniffer tool
-        ├── diagnose_ble.py            # Hardware BLE diagnostic utility
-        └── requirements.txt           # Python dependencies
+└── src/                               # ESP32 Modular Application
+    └── esp32_tpms_webserver/          # Unified Firmware (Supports Standard ESP32 & ESP32-C3)
+        ├── Config.h                   # Pins (auto-detects ESP32 vs C3), Wi-Fi & sensor whitelist
+        ├── ConfigManager.h / .cpp     # NVS Flash persistent settings manager
+        ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
+        ├── DisplayManager.h / .cpp    # Zero-heap I2C OLED display renderer
+        ├── WebServerManager.h / .cpp  # Web dashboard & REST API
+        └── esp32_tpms_webserver.ino   # Main entry point sketch
 ```
 
 ---
@@ -98,11 +89,9 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
    - **`NimBLE-Arduino`** (by *h2zero*) — Required for BLE scanning.
    - **`U8g2`** (by *Oliver Kraus*) — Required only if using OLED display (`ENABLE_OLED true`).
 
-### 2. Select Tested Firmware & Configure Settings
+### 2. Select Firmware & Configure Settings
 
-Choose the tested sketch corresponding to your hardware:
-- **Standard ESP32 (30/38-Pin DevKit)**: Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino)
-- **ESP32-C3 SuperMini**: Open [`src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino`](src/esp32_c3_tpms_webserver/esp32_c3_tpms_webserver.ino)
+Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino).
 
 > [!IMPORTANT]
 > **Arduino IDE Partition Setting (Required for ESP32-C3 SuperMini)**:
