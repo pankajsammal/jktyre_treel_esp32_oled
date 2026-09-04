@@ -4,7 +4,7 @@
 [![Platform: ESP32](https://img.shields.io/badge/Platform-ESP32%20%7C%20ESP32--C3-green.svg)](https://www.espressif.com/)
 [![Protocol: BLE](https://img.shields.io/badge/Protocol-BLE%204.0%2F5.0-orange.svg)](docs/PROTOCOL_SPECIFICATION.md)
 
-Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Dashboard, and REST API for **JK Tyre TREEL / SmartTyre TPMS Sensors** using **ESP32** microcontrollers or **Windows PC**.
+Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Dashboard, and REST API for **JK Tyre TREEL / SmartTyre TPMS Sensors** using **ESP32** microcontrollers.
 
 ---
 
@@ -23,6 +23,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
   - `GET /api/data`: Returns JSON telemetry state for all 4 tires, free heap, uptime, and packet counters.
   - `GET /api/logs`: Returns recent system logs.
   - `GET /api/clear`: Clears rolling log buffer.
+- **Dual Wi-Fi Modes**: Tries connecting to your Wi-Fi router (STA mode) first; automatically falls back to Access Point mode (`ESP32_TPMS_Dashboard` / `12345678`).
 - **Optional OLED Display**: Supports 1.3" SH1106 and 0.96" SSD1306 I2C OLED screens with a 4-quadrant layout.
 - **Headless Mode**: Can run completely headless as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway inside your vehicle.
 
@@ -102,14 +103,14 @@ Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webser
 > 2. Change from *Default 4MB with spiffs* to either:
 >    - **`Huge APP (3MB No OTA/1MB SPIFFS)`** *(Recommended)*
 >    - **`Minimal SPIFFS (1.9MB APP with OTA)`**
->
+> 
 > This expands program flash storage from 1.25 MB to **1.9 MB – 3.0 MB**.
 
 ---
 
 ## ⚙️ Central Configuration Guide (`Config.h`)
 
-All user settings, units, alert thresholds, hardware pins, and network parameters are centralized in `Config.h` in each firmware directory (`src/esp32_tpms_webserver/Config.h` and `src/esp32_c3_tpms_webserver/Config.h`).
+All user settings, units, alert thresholds, hardware pins, and network parameters are centralized in [`src/esp32_tpms_webserver/Config.h`](src/esp32_tpms_webserver/Config.h).
 
 | Configuration Option | Default Value | Description |
 | :--- | :--- | :--- |
@@ -119,7 +120,7 @@ All user settings, units, alert thresholds, hardware pins, and network parameter
 | **`DISPLAY_PRESSURE_UNIT`** | `UNIT_PSI` | Select OLED pressure unit: `UNIT_PSI` (PSI), `UNIT_BAR` (Bar), or `UNIT_KPA` (kPa) |
 | **`DISPLAY_TEMP_UNIT`** | `UNIT_CELSIUS` | Select OLED temperature unit: `UNIT_CELSIUS` (°C) or `UNIT_FAHRENHEIT` (°F) |
 | **`ALERT_MIN_PSI`** | `26.0f` | Low pressure warning threshold (PSI) |
-| **`ALERT_MAX_PSI`** | `45.0f` | High pressure warning threshold (PSI) |
+| **`ALERT_MAX_PSI`** | `40.0f` | High pressure warning threshold (PSI) |
 | **`ALERT_MAX_TEMP_C`** | `70.0f` | High temperature warning threshold (°C) |
 | **`ALERT_MIN_BATT`** | `15` | Low battery percentage warning threshold (%) |
 | **`WIFI_SSID` / `WIFI_PASS`** | `"Your_WiFi_SSID"` | Your home or vehicle Wi-Fi router credentials |
@@ -135,9 +136,6 @@ All user settings, units, alert thresholds, hardware pins, and network parameter
 
 ### Step 1: Finding Your Sensor MAC Addresses
 
-You can find your sensor MAC addresses using either of these two methods:
-
-#### Method A: Official JK Tyre SmartTyre App (Recommended)
 1. Open the official **JK Tyre SMART TYRE** app on your phone.
 2. Go to **Settings** $\rightarrow$ **Sensor Debug** ("Search fitted TPMS sensor").
 3. Note down the MAC address / Short ID (last 6 hex characters) listed for each of your 4 tires (FL, FR, RL, RR).
@@ -146,31 +144,20 @@ You can find your sensor MAC addresses using either of these two methods:
   <img src="docs/images/smarttyre_sensor_debug.jpg" width="280" alt="JK Tyre SmartTyre App Settings">
 </p>
 
-#### Method B: PC Diagnostic Tool
-Run the included Python diagnostic script on your Windows PC:
-```cmd
-cd tools/python_tpms_app
-python diagnose_ble.py
-```
-The script will scan for nearby TREEL TPMS sensors and output their detected MAC addresses and Short IDs automatically.
+### Step 2: Updating MAC Addresses in `Config.h`
 
----
-
-### Step 2: Updating MAC Addresses in Project Files
-
-#### 1. In ESP32 Firmware (`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`):
-Open [`src/esp32_tpms_webserver/esp32_tpms_webserver.ino`](src/esp32_tpms_webserver/esp32_tpms_webserver.ino) and replace the values in `SENSOR_MACS` and `SENSOR_SHORT_IDS`:
+Open [`src/esp32_tpms_webserver/Config.h`](src/esp32_tpms_webserver/Config.h) and replace the values in `SENSOR_MACS` and `SENSOR_SHORT_IDS`:
 
 ```cpp
 // --- 4 Whitelisted TPMS Sensors ---
-const char* SENSOR_MACS[4] = {
+const char* const SENSOR_MACS[4] = {
     "YOUR_FL_MAC",  // FL: Front Left
     "YOUR_FR_MAC",  // FR: Front Right
     "YOUR_RL_MAC",  // RL: Rear Left
     "YOUR_RR_MAC"   // RR: Rear Right
 };
 
-const char* SENSOR_SHORT_IDS[4] = {
+const char* const SENSOR_SHORT_IDS[4] = {
     "FL_ID",  // FL Short ID (Last 6 hex digits of MAC)
     "FR_ID",  // FR Short ID
     "RL_ID",  // RL Short ID
@@ -178,26 +165,15 @@ const char* SENSOR_SHORT_IDS[4] = {
 };
 ```
 
-#### 2. In Windows Python CLI Tool (`tools/python_tpms_app/core/scanner.py`):
-Open [`tools/python_tpms_app/core/scanner.py`](tools/python_tpms_app/core/scanner.py) and update `WHITELISTED_SENSORS`:
+---
 
-```python
-WHITELISTED_SENSORS: Dict[str, Dict[str, str]] = {
-    "YOUR_FL_MAC": {"pos": "FL", "name": "Front Left", "short_id": "FL_ID"},
-    "YOUR_FR_MAC": {"pos": "FR", "name": "Front Right", "short_id": "FR_ID"},
-    "YOUR_RL_MAC": {"pos": "RL", "name": "Rear Left", "short_id": "RL_ID"},
-    "YOUR_RR_MAC": {"pos": "RR", "name": "Rear Right", "short_id": "RR_ID"},
-}
-```
-```
-
-### 3. Flash to ESP32
+### Step 3: Flash to ESP32
 
 1. Connect your ESP32 board via USB.
 2. Select your Board under **Tools -> Board** (e.g. `ESP32 Dev Module` or `ESP32C3 Dev Module`).
 3. Click **Upload**.
 
-### 4. Access Live Web Dashboard
+### Step 4: Access Live Web Dashboard
 
 1. Open **Serial Monitor** at **115200 baud** to view boot logs and IP address.
 2. Open a web browser on your phone, tablet, or PC:
@@ -223,25 +199,10 @@ All 4 OLED wires connect directly to the **LEFT HEADER** of the 38-pin board:
 
 ---
 
-## 💻 Windows PC CLI Tool
-
-If you prefer running a live BLE sniffer directly on a Windows laptop or PC without an ESP32 board, check out our easy-to-use Python CLI tool under [`tools/python_tpms_app/`](tools/python_tpms_app/).
-
-For installation instructions, see the [Windows CLI Setup Guide](docs/WINDOWS_CLI_GUIDE.md).
-
-```cmd
-cd tools/python_tpms_app
-pip install -r requirements.txt
-python tpms_cli.py
-```
-
----
-
 ## 🌐 Detailed Documentation Links
 
 - 📖 [TREEL BLE Protocol & AES Specification](docs/PROTOCOL_SPECIFICATION.md)
 - 🚀 [ESP32-C3 SuperMini Hardware Setup & Pinout Guide](docs/ESP32_C3_SUPERMINI_GUIDE.md)
-- 🖥️ [Windows Desktop Python CLI Tool Setup Guide](docs/WINDOWS_CLI_GUIDE.md)
 
 ---
 
