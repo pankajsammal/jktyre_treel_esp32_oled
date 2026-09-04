@@ -12,7 +12,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 
 - **Dual Telemetry Decoding**:
   - **Mode 1: Apple iBeacon Mode** (`...FFE0` UUID) — Extracts Pressure (PSI) & Temperature (°C).
-  - **Mode 2: Encrypted GATT Mode** (AES-128-ECB via `mbedTLS`) — Decrypts full payload with secret key `#@Trl2018-lespl$` for Pressure, Temperature, and Battery %.
+  - **Mode 2: Encrypted GATT Mode** (AES-128-ECB via `mbedTLS`) — Decrypts full payload with secret key for Pressure, Temperature, and Battery %.
 - **Dual-Endian MAC Matching**: Correctly resolves both Forward MAC (`D2:58:6D:8F:16:10`), Reversed MAC (`10:16:8F:6D:58:D2`), and 6-character Short Sensor IDs (`8F1610`).
 - **High Performance Continuous Scanning**: Powered by `NimBLE-Arduino` for 100% packet capture with zero buffer drops.
 - **Embedded Web Server & Live Dashboard**:
