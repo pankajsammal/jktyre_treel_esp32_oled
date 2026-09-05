@@ -137,7 +137,7 @@ All user settings, units, alert thresholds, hardware pins, and network parameter
 ### Step 1: Finding Your Sensor MAC Addresses
 
 1. Open the official **JK Tyre SMART TYRE** app on your phone.
-2. Go to **Settings** $\rightarrow$ **Sensor Debug** ("Search fitted TPMS sensor").
+2. Go to **Settings** $\rightarrow$ **Sensor Debug**.
 3. Note down the MAC address / Short ID (last 6 hex characters) listed for each of your 4 tires (FL, FR, RL, RR).
 
 <p align="center">
