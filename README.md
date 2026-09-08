@@ -27,6 +27,12 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 - **Optional OLED Display**: Supports 1.3" SH1106 and 0.96" SSD1306 I2C OLED screens with a 4-quadrant layout.
 - **Headless Mode**: Can run completely headless as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway inside your vehicle.
 
+<p align="center">
+  <img src="docs/images/oled_display_preview.jpg" width="420" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
+  <br>
+  <em>1.3" I2C OLED Display showing live TPMS tire pressures (FL: 31 PSI, FR: 30 PSI, RL: 32 PSI, RR: 32 PSI) and web server IP address.</em>
+</p>
+
 ---
 
 ## 📐 Project Architecture

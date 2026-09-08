@@ -98,6 +98,12 @@ Wire display pins cleanly to custom GPIOs on the right header:
 #define OLED_SCL_PIN 3
 ```
 
+<p align="center">
+  <img src="images/oled_display_preview.jpg" width="380" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
+  <br>
+  <em>Live 1.3" I2C OLED Display output with 4-quadrant TPMS layout.</em>
+</p>
+
 ---
 
 ## 5. Running Headless (No Display Mode)
