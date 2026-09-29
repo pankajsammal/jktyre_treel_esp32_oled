@@ -1,3 +1,4 @@
+#include "DisplayManager.h"
 #include "ConfigManager.h"
 
 DisplayManager Display;
