@@ -104,13 +104,13 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     }
 
     if (strcmp(tempBuf, m_lastTemp[posIdx]) != 0) {
-        GFXcanvas16 canvas(56, 18);
+        GFXcanvas16 canvas(68, 18);
         canvas.fillScreen(cardBg);
         canvas.setFont(&FreeSans9pt7b);
         canvas.setTextColor(textSub);
         canvas.setCursor(0, 14);
         canvas.print(tempBuf);
-        m_tft.drawRGBBitmap(x + 8, y + 28, canvas.getBuffer(), 56, 18);
+        m_tft.drawRGBBitmap(x + 6, y + 28, canvas.getBuffer(), 68, 18);
         snprintf(m_lastTemp[posIdx], sizeof(m_lastTemp[posIdx]), "%s", tempBuf);
     }
 
@@ -122,17 +122,17 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     if (strcmp(battBuf, m_lastBatt[posIdx]) != 0) {
         uint16_t battColor = (has_data && tire.battery_percent < ConfigMgr.alert_min_batt) ? ST7789_RED_COLOR : textSub;
 
-        GFXcanvas16 canvas(56, 18);
+        GFXcanvas16 canvas(68, 18);
         canvas.fillScreen(cardBg);
         canvas.setFont(&FreeSans9pt7b);
         canvas.setTextColor(battColor);
         canvas.setCursor(0, 14);
         canvas.print(battBuf);
-        m_tft.drawRGBBitmap(x + 8, y + 46, canvas.getBuffer(), 56, 18);
+        m_tft.drawRGBBitmap(x + 6, y + 46, canvas.getBuffer(), 68, 18);
         snprintf(m_lastBatt[posIdx], sizeof(m_lastBatt[posIdx]), "%s", battBuf);
     }
 
-    // 4. Last Updated Age / Timer - Left Column Row 4 (Double buffered via GFXcanvas16)
+    // 4. Last Updated Age / Timer - Left Column Row 4 (Strictly x = 6..74, zero overlap)
     char ageBuf[14];
     if (has_data) {
         uint32_t diff = (now_ms - tire.last_updated_ms) / 1000;
@@ -144,17 +144,17 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     }
 
     if (strcmp(ageBuf, m_lastAge[posIdx]) != 0) {
-        GFXcanvas16 canvas(60, 22);
+        GFXcanvas16 canvas(68, 22);
         canvas.fillScreen(cardBg);
         canvas.setFont(&FreeSans9pt7b);
         canvas.setTextColor(textSub);
         canvas.setCursor(0, 16);
         canvas.print(ageBuf);
-        m_tft.drawRGBBitmap(x + 8, y + 64, canvas.getBuffer(), 60, 22);
+        m_tft.drawRGBBitmap(x + 6, y + 64, canvas.getBuffer(), 68, 22);
         snprintf(m_lastAge[posIdx], sizeof(m_lastAge[posIdx]), "%s", ageBuf);
     }
 
-    // 5. Massive Prominent Pressure Digits - Right Column (Double buffered via GFXcanvas16)
+    // 5. Massive Prominent Pressure Digits - Right Column (Strictly x = 76..144, zero overlap)
     char psiBuf[12];
     if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
         if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
@@ -168,21 +168,21 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     }
 
     if (strcmp(psiBuf, m_lastPsi[posIdx]) != 0) {
-        GFXcanvas16 canvas(84, 76);
+        GFXcanvas16 canvas(68, 76);
         canvas.fillScreen(cardBg);
         canvas.setFont(&FreeSansBold24pt7b);
         int16_t px1, py1;
         uint16_t pw, ph;
         canvas.getTextBounds(psiBuf, 0, 0, &px1, &py1, &pw, &ph);
 
-        // Right align digits with 6px right padding, accounting for font left bearing
-        int psiX = 84 - (int)pw - (int)px1 - 6;
+        // Right align digits inside 68px canvas, accounting for font left bearing
+        int psiX = 68 - (int)pw - (int)px1 - 4;
         if (psiX < 2) psiX = 2;
 
         canvas.setTextColor(textMain);
         canvas.setCursor(psiX, 56);
         canvas.print(psiBuf);
-        m_tft.drawRGBBitmap(x + 58, y + 10, canvas.getBuffer(), 84, 76);
+        m_tft.drawRGBBitmap(x + 76, y + 10, canvas.getBuffer(), 68, 76);
         snprintf(m_lastPsi[posIdx], sizeof(m_lastPsi[posIdx]), "%s", psiBuf);
     }
 }
