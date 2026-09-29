@@ -93,26 +93,23 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
         m_lastPsi[posIdx][0] = '\0';
     }
 
-    // 2. Battery Level - Redraw ONLY when string changes
+    // 2. Battery Level - Moved to left column under Temperature
     char battBuf[10];
     if (has_data) snprintf(battBuf, sizeof(battBuf), "%d%%", tire.battery_percent);
     else snprintf(battBuf, sizeof(battBuf), "--%%");
 
     if (strcmp(battBuf, m_lastBatt[posIdx]) != 0) {
-        int16_t bx1, by1;
-        uint16_t bw, bh;
-        m_tft.setFont(&FreeSansBold9pt7b);
-        m_tft.getTextBounds(battBuf, 0, 0, &bx1, &by1, &bw, &bh);
         uint16_t battColor = (has_data && tire.battery_percent < ConfigMgr.alert_min_batt) ? ST7789_RED_COLOR : textSub;
 
-        m_tft.fillRect(x + w - 65, y + 6, 55, 22, cardBg);
+        m_tft.setFont(&FreeSans9pt7b);
+        m_tft.fillRect(x + 10, y + 48, 55, 18, cardBg);
         m_tft.setTextColor(battColor);
-        m_tft.setCursor(x + w - 12 - bw, y + 22);
+        m_tft.setCursor(x + 10, y + 62);
         m_tft.print(battBuf);
         snprintf(m_lastBatt[posIdx], sizeof(m_lastBatt[posIdx]), "%s", battBuf);
     }
 
-    // 3. Temperature - Redraw ONLY when string changes
+    // 3. Temperature - Left Column Row 2
     char tempBuf[12];
     if (ConfigMgr.display_temp_unit == UNIT_FAHRENHEIT) {
         if (has_data) snprintf(tempBuf, sizeof(tempBuf), "%.0f F", tire.temperature_f);
@@ -124,14 +121,14 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
 
     if (strcmp(tempBuf, m_lastTemp[posIdx]) != 0) {
         m_tft.setFont(&FreeSans9pt7b);
-        m_tft.fillRect(x + 10, y + 36, 62, 20, cardBg);
+        m_tft.fillRect(x + 10, y + 30, 55, 18, cardBg);
         m_tft.setTextColor(textSub);
-        m_tft.setCursor(x + 12, y + 52);
+        m_tft.setCursor(x + 10, y + 44);
         m_tft.print(tempBuf);
         snprintf(m_lastTemp[posIdx], sizeof(m_lastTemp[posIdx]), "%s", tempBuf);
     }
 
-    // 4. Last Updated Age - Redraw ONLY when string changes
+    // 4. Last Updated Age - Left Column Row 4
     char ageBuf[14];
     if (has_data) {
         uint32_t diff = (now_ms - tire.last_updated_ms) / 1000;
@@ -144,14 +141,14 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
 
     if (strcmp(ageBuf, m_lastAge[posIdx]) != 0) {
         m_tft.setFont(&FreeSans9pt7b);
-        m_tft.fillRect(x + 10, y + 62, 70, 24, cardBg);
+        m_tft.fillRect(x + 10, y + 66, 60, 20, cardBg);
         m_tft.setTextColor(textSub);
-        m_tft.setCursor(x + 12, y + 78);
+        m_tft.setCursor(x + 10, y + 82);
         m_tft.print(ageBuf);
         snprintf(m_lastAge[posIdx], sizeof(m_lastAge[posIdx]), "%s", ageBuf);
     }
 
-    // 5. Big Pressure Digits - Redraw ONLY when string changes
+    // 5. Massive Prominent Pressure Digits - Right Column
     char psiBuf[12];
     if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
         if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
@@ -170,13 +167,14 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
         uint16_t pw, ph;
         m_tft.getTextBounds(psiBuf, 0, 0, &px1, &py1, &pw, &ph);
 
-        m_tft.fillRect(x + 75, y + 28, w - 85, 55, cardBg);
+        // Erase entire right quadrant cleanly for giant digits
+        m_tft.fillRect(x + 65, y + 8, w - 72, 80, cardBg);
 
-        int psiX = x + w - 12 - pw;
-        if (psiX < x + 75) psiX = x + 75;
+        int psiX = x + w - 10 - pw;
+        if (psiX < x + 66) psiX = x + 66;
 
         m_tft.setTextColor(textMain);
-        m_tft.setCursor(psiX, y + 70);
+        m_tft.setCursor(psiX, y + 64);
         m_tft.print(psiBuf);
         snprintf(m_lastPsi[posIdx], sizeof(m_lastPsi[posIdx]), "%s", psiBuf);
     }
