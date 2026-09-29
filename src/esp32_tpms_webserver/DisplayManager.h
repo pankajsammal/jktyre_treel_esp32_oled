@@ -2,21 +2,26 @@
 #define DISPLAY_MANAGER_H
 
 #include <Arduino.h>
-#include <Wire.h>
-#include <U8g2lib.h>
-#include "TreelTPMS.h"
 #include "Config.h"
+#include "TreelTPMS.h"
+
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+#include "DisplayDriverST7789.h"
+#elif DISPLAY_TYPE == DISPLAY_TYPE_ILI9225
+#include "DisplayDriverILI9225.h"
+#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306 || DISPLAY_TYPE == DISPLAY_TYPE_SH1106
+#include "DisplayDriverOLED.h"
+#endif
 
 class DisplayManager {
 private:
-#if USE_SH1106_1_3_INCH
-    U8G2_SH1106_128X64_NONAME_F_HW_I2C m_u8g2;
-#else
-    U8G2_SSD1306_128X64_NONAME_F_HW_I2C m_u8g2;
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+    DisplayDriverST7789 m_driver;
+#elif DISPLAY_TYPE == DISPLAY_TYPE_ILI9225
+    DisplayDriverILI9225 m_driver;
+#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306 || DISPLAY_TYPE == DISPLAY_TYPE_SH1106
+    DisplayDriverOLED m_driver;
 #endif
-    bool m_initialized = false;
-
-    void renderCard(const TireData& tire, const char* posLabel, int x, int y, uint32_t now_ms);
 
 public:
     DisplayManager();

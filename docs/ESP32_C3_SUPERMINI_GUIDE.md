@@ -68,7 +68,25 @@ If your ESP32-C3 SuperMini is not recognized by your computer:
 
 ---
 
-### Option A: Standard Hardware I2C (Default)
+### Option A: 2.0" ILI9225 SPI TFT Display Module Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.1)
+
+Connect the 7-pin 2.0" TFT SPI module to the ESP32-C3 SuperMini headers:
+
+| GMT020-02 Pin Label | ESP32-C3 Pin | Location on Board |
+| :--- | :--- | :--- |
+| **Pin 1: CS** | **GPIO 7** | Left Header, Pin 3 |
+| **Pin 2: DC** | **GPIO 3** | Right Header, Pin 5 |
+| **Pin 3: RST** | **GPIO 2** | Right Header, Pin 6 |
+| **Pin 4: SDA** | **GPIO 6** | Left Header, Pin 2 |
+| **Pin 5: SCL** | **GPIO 4** | Right Header, Pin 4 |
+| **Pin 6: VCC** | **3.3V / 5V** | Right Header, Pin 3 (`3.3`) or Pin 1 (`5V`) |
+| **Pin 7: GND** | **GND** | Right Header, Pin 2 (`G`) |
+
+*Note: The GMT020-02 module includes an on-board Q1 backlight drive circuit powered directly through VCC.*
+
+---
+
+### Option B: Standard Hardware I2C OLED (SSD1306 / SH1106)
 
 Use standard hardware I2C pins (GPIO 8 & GPIO 9) on the left header:
 
@@ -78,25 +96,6 @@ Use standard hardware I2C pins (GPIO 8 & GPIO 9) on the left header:
 | **GND** | **GND** | Right Header, Pin 2 (`G`) |
 | **SDA** | **GPIO 8** | Left Header, Pin 4 |
 | **SCL** | **GPIO 9** | Left Header, Pin 5 |
-
----
-
-### Option B: Custom Wiring (Right Header Pins)
-
-Wire display pins cleanly to custom GPIOs on the right header:
-
-| OLED Display Pin | ESP32-C3 Pin | Location on Board |
-| :--- | :--- | :--- |
-| **GND** | **GND** | Right Header, Pin 2 (`G`) |
-| **VCC** | **3.3V** | Right Header, Pin 3 (`3.3`) |
-| **SDA** | **GPIO 4** | Right Header, Pin 4 |
-| **SCL** | **GPIO 3** | Right Header, Pin 5 |
-
-*If using Option B, update pin definitions in [`src/esp32_tpms_webserver/Config.h`](file:///d:/projects/jktyre_treel_esp32/src/esp32_tpms_webserver/Config.h):*
-```cpp
-#define OLED_SDA_PIN 4
-#define OLED_SCL_PIN 3
-```
 
 <p align="center">
   <img src="images/oled_display_preview.jpg" width="380" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
@@ -111,8 +110,9 @@ Wire display pins cleanly to custom GPIOs on the right header:
 If you are placing the board inside a car dashboard without a screen:
 In [`src/esp32_tpms_webserver/Config.h`](file:///d:/projects/jktyre_treel_esp32/src/esp32_tpms_webserver/Config.h):
 ```cpp
-#define ENABLE_OLED false
+#define DISPLAY_TYPE DISPLAY_TYPE_NONE
 ```
-- Completely disables I2C bus initialization.
-- Saves RAM and CPU cycles.
+- Completely disables display drivers via preprocessor compilation.
+- Compiles 0 bytes of display or font logic into binary.
 - View live tire telemetry from your phone or tablet browser at `http://192.168.4.1` or your Wi-Fi router IP.
+

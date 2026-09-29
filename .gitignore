@@ -13,7 +13,8 @@ venv/
 env/
 .env
 
-# Log files & CSV packet dumps
+# Media & capture files
+*.mp4
 *.log
 tpms_packets.csv
 tpms_raw_capture.csv
