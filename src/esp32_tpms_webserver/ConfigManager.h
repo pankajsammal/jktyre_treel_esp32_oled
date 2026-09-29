@@ -11,14 +11,13 @@ private:
 
 public:
     // Runtime Configurable Parameters
+    uint8_t display_type;
     uint8_t display_pressure_unit;
     uint8_t display_temp_unit;
     float alert_min_psi;
     float alert_max_psi;
     float alert_max_temp_c;
     int alert_min_batt;
-    int oled_sda_pin;
-    int oled_scl_pin;
     String wifi_ssid;
     String wifi_pass;
     bool try_sta_first;
@@ -33,9 +32,9 @@ public:
     void resetToDefaults();
 
     String getSettingsJson();
-    bool updateFromParams(const String& pressure_unit, const String& temp_unit,
+    bool updateFromParams(uint8_t disp_type, const String& pressure_unit, const String& temp_unit,
                          float min_psi, float max_psi, float max_temp, int min_batt,
-                         int sda_pin, int scl_pin, const String& w_ssid, const String& w_pass, bool try_sta,
+                         const String& w_ssid, const String& w_pass, bool try_sta,
                          const String& ap_s, const String& ap_p, bool demo_mode);
 };
 
