@@ -37,6 +37,12 @@ private:
     String m_lastIp = "";
     uint8_t m_lastUnit = 0xFF;
 
+    // Last rendered string buffers for differential zero-flicker rendering
+    char m_lastBatt[4][10];
+    char m_lastTemp[4][12];
+    char m_lastAge[4][14];
+    char m_lastPsi[4][12];
+
     void renderCard(const TireData& tire, const char* posLabel, int x, int y, int w, int h, uint32_t now_ms);
 
 public:

@@ -47,7 +47,13 @@ void DisplayDriverST7789::begin() {
     m_cardsDrawn = false;
     m_lastIp = "";
     m_lastUnit = 0xFF;
-    for (int i = 0; i < 4; i++) m_lastAlertState[i] = 0xFF;
+    for (int i = 0; i < 4; i++) {
+        m_lastAlertState[i] = 0xFF;
+        m_lastBatt[i][0] = '\0';
+        m_lastTemp[i][0] = '\0';
+        m_lastAge[i][0] = '\0';
+        m_lastPsi[i][0] = '\0';
+    }
 }
 
 void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel, int x, int y, int w, int h, uint32_t now_ms) {
@@ -66,36 +72,47 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     else if (posLabel[0] == 'R' && posLabel[1] == 'L') posIdx = 2;
     else if (posLabel[0] == 'R' && posLabel[1] == 'R') posIdx = 3;
 
-    // Draw Rounded Glassmorphism Card Background & Outer Border ONLY on alert state changes
-    if (m_lastAlertState[posIdx] != (uint8_t)is_alert || !m_cardsDrawn) {
+    bool alertStateChanged = (m_lastAlertState[posIdx] != (uint8_t)is_alert);
+
+    // 1. Draw Glassmorphism Card Base & Position Label ONLY on first draw or alert state change
+    if (!m_cardsDrawn || alertStateChanged) {
         m_tft.fillRoundRect(x, y, w, h, 8, cardBg);
         m_tft.drawRoundRect(x, y, w, h, 8, borderCol);
         m_lastAlertState[posIdx] = (uint8_t)is_alert;
+
+        // Position Label (FL, FR, RL, RR)
+        m_tft.setFont(&FreeSansBold12pt7b);
+        m_tft.setTextColor(ST7789_CYAN_COLOR);
+        m_tft.setCursor(x + 12, y + 26);
+        m_tft.print(posLabel);
+
+        // Clear tracking buffers so all dynamic fields get rendered on the fresh background
+        m_lastBatt[posIdx][0] = '\0';
+        m_lastTemp[posIdx][0] = '\0';
+        m_lastAge[posIdx][0] = '\0';
+        m_lastPsi[posIdx][0] = '\0';
     }
 
-    // 1. Top-Left Position Label (FL, FR, RL, RR) in Smooth FreeSansBold12pt7b
-    m_tft.setFont(&FreeSansBold12pt7b);
-    m_tft.setTextColor(ST7789_CYAN_COLOR);
-    m_tft.setCursor(x + 12, y + 26);
-    m_tft.print(posLabel);
-
-    // 2. Top-Right Battery Level in Smooth FreeSansBold9pt7b
+    // 2. Battery Level - Redraw ONLY when string changes
     char battBuf[10];
     if (has_data) snprintf(battBuf, sizeof(battBuf), "%d%%", tire.battery_percent);
     else snprintf(battBuf, sizeof(battBuf), "--%%");
 
-    int16_t bx1, by1;
-    uint16_t bw, bh;
-    m_tft.setFont(&FreeSansBold9pt7b);
-    m_tft.getTextBounds(battBuf, 0, 0, &bx1, &by1, &bw, &bh);
-    uint16_t battColor = (has_data && tire.battery_percent < ConfigMgr.alert_min_batt) ? ST7789_RED_COLOR : textSub;
+    if (strcmp(battBuf, m_lastBatt[posIdx]) != 0) {
+        int16_t bx1, by1;
+        uint16_t bw, bh;
+        m_tft.setFont(&FreeSansBold9pt7b);
+        m_tft.getTextBounds(battBuf, 0, 0, &bx1, &by1, &bw, &bh);
+        uint16_t battColor = (has_data && tire.battery_percent < ConfigMgr.alert_min_batt) ? ST7789_RED_COLOR : textSub;
 
-    m_tft.fillRect(x + w - 65, y + 6, 55, 22, cardBg); // Erase battery text region cleanly
-    m_tft.setTextColor(battColor);
-    m_tft.setCursor(x + w - 12 - bw, y + 22);
-    m_tft.print(battBuf);
+        m_tft.fillRect(x + w - 65, y + 6, 55, 22, cardBg);
+        m_tft.setTextColor(battColor);
+        m_tft.setCursor(x + w - 12 - bw, y + 22);
+        m_tft.print(battBuf);
+        snprintf(m_lastBatt[posIdx], sizeof(m_lastBatt[posIdx]), "%s", battBuf);
+    }
 
-    // 3. Mid-Left Temperature in Smooth FreeSans9pt7b
+    // 3. Temperature - Redraw ONLY when string changes
     char tempBuf[12];
     if (ConfigMgr.display_temp_unit == UNIT_FAHRENHEIT) {
         if (has_data) snprintf(tempBuf, sizeof(tempBuf), "%.0f F", tire.temperature_f);
@@ -104,13 +121,17 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
         if (has_data) snprintf(tempBuf, sizeof(tempBuf), "%.0f C", tire.temperature_c);
         else snprintf(tempBuf, sizeof(tempBuf), "-- C");
     }
-    m_tft.setFont(&FreeSans9pt7b);
-    m_tft.fillRect(x + 10, y + 36, 62, 20, cardBg); // Erase temperature text region cleanly
-    m_tft.setTextColor(textSub);
-    m_tft.setCursor(x + 12, y + 52);
-    m_tft.print(tempBuf);
 
-    // 4. Bottom-Left Last Updated Age in Smooth FreeSans9pt7b
+    if (strcmp(tempBuf, m_lastTemp[posIdx]) != 0) {
+        m_tft.setFont(&FreeSans9pt7b);
+        m_tft.fillRect(x + 10, y + 36, 62, 20, cardBg);
+        m_tft.setTextColor(textSub);
+        m_tft.setCursor(x + 12, y + 52);
+        m_tft.print(tempBuf);
+        snprintf(m_lastTemp[posIdx], sizeof(m_lastTemp[posIdx]), "%s", tempBuf);
+    }
+
+    // 4. Last Updated Age - Redraw ONLY when string changes
     char ageBuf[14];
     if (has_data) {
         uint32_t diff = (now_ms - tire.last_updated_ms) / 1000;
@@ -120,13 +141,17 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     } else {
         snprintf(ageBuf, sizeof(ageBuf), "WAIT");
     }
-    m_tft.setFont(&FreeSans9pt7b);
-    m_tft.fillRect(x + 10, y + 62, 70, 24, cardBg); // Erase age text region cleanly
-    m_tft.setTextColor(textSub);
-    m_tft.setCursor(x + 12, y + 78);
-    m_tft.print(ageBuf);
 
-    // 5. Right Side Big Pressure Digits in Smooth FreeSansBold24pt7b
+    if (strcmp(ageBuf, m_lastAge[posIdx]) != 0) {
+        m_tft.setFont(&FreeSans9pt7b);
+        m_tft.fillRect(x + 10, y + 62, 70, 24, cardBg);
+        m_tft.setTextColor(textSub);
+        m_tft.setCursor(x + 12, y + 78);
+        m_tft.print(ageBuf);
+        snprintf(m_lastAge[posIdx], sizeof(m_lastAge[posIdx]), "%s", ageBuf);
+    }
+
+    // 5. Big Pressure Digits - Redraw ONLY when string changes
     char psiBuf[12];
     if (ConfigMgr.display_pressure_unit == UNIT_KPA) {
         if (has_data) snprintf(psiBuf, sizeof(psiBuf), "%.0f", tire.pressure_kpa);
@@ -139,20 +164,22 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
         else snprintf(psiBuf, sizeof(psiBuf), "--");
     }
 
-    m_tft.setFont(&FreeSansBold24pt7b);
-    int16_t px1, py1;
-    uint16_t pw, ph;
-    m_tft.getTextBounds(psiBuf, 0, 0, &px1, &py1, &pw, &ph);
+    if (strcmp(psiBuf, m_lastPsi[posIdx]) != 0) {
+        m_tft.setFont(&FreeSansBold24pt7b);
+        int16_t px1, py1;
+        uint16_t pw, ph;
+        m_tft.getTextBounds(psiBuf, 0, 0, &px1, &py1, &pw, &ph);
 
-    // Erase pressure region cleanly
-    m_tft.fillRect(x + 75, y + 28, w - 85, 55, cardBg);
+        m_tft.fillRect(x + 75, y + 28, w - 85, 55, cardBg);
 
-    int psiX = x + w - 12 - pw;
-    if (psiX < x + 75) psiX = x + 75;
+        int psiX = x + w - 12 - pw;
+        if (psiX < x + 75) psiX = x + 75;
 
-    m_tft.setTextColor(textMain);
-    m_tft.setCursor(psiX, y + 70);
-    m_tft.print(psiBuf);
+        m_tft.setTextColor(textMain);
+        m_tft.setCursor(psiX, y + 70);
+        m_tft.print(psiBuf);
+        snprintf(m_lastPsi[posIdx], sizeof(m_lastPsi[posIdx]), "%s", psiBuf);
+    }
 }
 
 void DisplayDriverST7789::render(const TireData tires[4]) {
@@ -197,6 +224,12 @@ void DisplayDriverST7789::render(const TireData tires[4]) {
         m_tft.setCursor(312 - uw, 18);
         m_tft.print(unitLabel);
         m_lastUnit = ConfigMgr.display_pressure_unit;
+
+        // Force text redraws when unit changes
+        for (int i = 0; i < 4; i++) {
+            m_lastTemp[i][0] = '\0';
+            m_lastPsi[i][0] = '\0';
+        }
     }
 
     // 2. 4-QUADRANT GRID WITH SMOOTH ROUNDED CARDS
