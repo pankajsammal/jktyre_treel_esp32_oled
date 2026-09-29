@@ -14,14 +14,13 @@
 // 1. FEATURE & TEST MODE SWITCHES
 // ---------------------------------------------------------------------
 #define ENABLE_WEBSERVER     true    // Set to false to disable Wi-Fi and Web Server (Pure BLE / Ultra Low Power)
-#define ENABLE_DEMO_MODE     false   // Set to true to test Display & Web Server with dummy values & warnings
+#define ENABLE_DEMO_MODE     true   // Set to true to test Display & Web Server with dummy values & warnings
 
 // Display Hardware Selector Constants
 #define DISPLAY_TYPE_NONE     0      // Headless Mode (No screen attached, zero display code compiled)
 #define DISPLAY_TYPE_SSD1306  1      // 0.96" I2C OLED (128x64 resolution, SSD1306 driver)
 #define DISPLAY_TYPE_SH1106   2      // 1.3" I2C OLED (128x64 resolution, SH1106 driver)
-#define DISPLAY_TYPE_ILI9225  3      // 2.0" SPI TFT (176x220 resolution, ILI9225 driver)
-#define DISPLAY_TYPE_ST7789   4      // 2.0" SPI TFT (GMT020-02 / 2.0TFTSPI ST7789V driver)
+#define DISPLAY_TYPE_ST7789   3      // 2.0" SPI TFT (GMT020-02 / 2.0TFTSPI ST7789V driver)
 
 // ACTIVE DISPLAY SELECTION: Change this to match your physical display board
 #define DISPLAY_TYPE          DISPLAY_TYPE_ST7789

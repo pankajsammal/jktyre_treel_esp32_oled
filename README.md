@@ -25,7 +25,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
   - `GET /api/clear`: Clears rolling log buffer.
 - **Dual Wi-Fi Modes**: Tries connecting to your Wi-Fi router (STA mode) first; automatically falls back to Access Point mode (`ESP32_TPMS_Dashboard` / `12345678`).
 - **Modular Multi-Display Support (Zero Memory Overhead)**:
-  - **2.0" ILI9225 SPI TFT Color Display** (176x220 / 220x176 Landscape) — High resolution 4-quadrant layout with large pressure fonts (`logisoso32`), battery %, RSSI, and age timers.
+  - **2.0" ST7789 SPI TFT Color Display** (GMT020-02 320x240 Landscape) — High resolution 4-quadrant modern automotive layout with FreeSans vector typography, battery %, and double-buffered age timers.
   - **1.3" SH1106 & 0.96" SSD1306 I2C OLED Displays** (128x64 resolution).
   - **Conditional Compilation**: Preprocessor macros (`DISPLAY_TYPE`) ensure only the selected display driver & font tables are compiled, keeping binary footprint minimal.
 - **Headless Mode**: Can run completely headless (`DISPLAY_TYPE_NONE`) as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway with zero display overhead.
@@ -56,7 +56,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
                              ▼            ▼
                      ┌───────────────┐ ┌───────────────────────┐
                      │ Web Dashboard │ │ OLED (1.3"/0.96" I2C) │
-                     │  & REST API   │ │ TFT (2.0" ILI9225 SPI)│
+                     │  & REST API   │ │ TFT (2.0" ST7789 SPI) │
                      └───────────────┘ └───────────────────────┘
 ```
 
@@ -83,7 +83,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
         ├── ConfigManager.h / .cpp     # NVS Flash persistent settings manager
         ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
         ├── DisplayManager.h / .cpp    # Unified facade for display drivers
-        ├── DisplayDriverILI9225.h/.cpp# 2.0" SPI TFT driver (176x220 / 220x176)
+        ├── DisplayDriverST7789.h/.cpp # 2.0" SPI TFT driver (320x240 GMT020-02)
         ├── DisplayDriverOLED.h / .cpp # 128x64 I2C OLED driver (SSD1306 / SH1106)
         ├── WebServerManager.h / .cpp  # Web dashboard & REST API
         └── esp32_tpms_webserver.ino   # Main entry point sketch
@@ -102,7 +102,6 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
    - **`Adafruit ST7735 and ST7789 Library`** (by *Adafruit*) — Required for ST7789 2.0" 320x240 TFT displays (`DISPLAY_TYPE_ST7789`).
    - **`Adafruit GFX Library`** (by *Adafruit*) — Required graphics core library for Adafruit displays.
    - **`U8g2`** (by *Oliver Kraus*) — Required for I2C OLED displays (SSD1306 / SH1106).
-   - **`TFT_22_ILI9225`** (by *Nkawu* / *Niek van der Maas*) — Required for 2.0" ILI9225 SPI TFT displays.
 
 ### 2. Select Firmware & Configure Settings
 
@@ -128,7 +127,7 @@ All user settings, units, alert thresholds, hardware pins, and network parameter
 
 | Configuration Option | Default Value | Description |
 | :--- | :--- | :--- |
-| **`DISPLAY_TYPE`** | `DISPLAY_TYPE_ST7789` | Select display: `DISPLAY_TYPE_ST7789` (2.0" ST7789V SPI TFT), `DISPLAY_TYPE_ILI9225` (2.0" ILI9225 SPI TFT), `DISPLAY_TYPE_SH1106` (1.3" OLED), `DISPLAY_TYPE_SSD1306` (0.96" OLED), `DISPLAY_TYPE_NONE` (Headless) |
+| **`DISPLAY_TYPE`** | `DISPLAY_TYPE_ST7789` | Select display: `DISPLAY_TYPE_ST7789` (2.0" ST7789V SPI TFT), `DISPLAY_TYPE_SH1106` (1.3" OLED), `DISPLAY_TYPE_SSD1306` (0.96" OLED), `DISPLAY_TYPE_NONE` (Headless) |
 | **`ENABLE_WEBSERVER`** | `true` | Set to `false` to disable Wi-Fi and Web Server (pure ultra-low-power BLE mode) |
 | **`ENABLE_DEMO_MODE`** | `false` | Set to `true` to test Display & Web Dashboard with simulated dummy values & warnings |
 | **`DISPLAY_PRESSURE_UNIT`** | `UNIT_PSI` | Select pressure unit: `UNIT_PSI` (PSI), `UNIT_BAR` (Bar), or `UNIT_KPA` (kPa) |
@@ -198,7 +197,7 @@ const char* const SENSOR_SHORT_IDS[4] = {
 
 ## 🔌 Hardware Wiring Tables
 
-### 1. 2.0" ILI9225 SPI TFT Display Module Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.1)
+### 1. 2.0" ST7789 SPI TFT Display Module Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.3)
 
 | Module Pin Label | Standard ESP32 (DevKit) | ESP32-C3 SuperMini | Description |
 | :--- | :--- | :--- | :--- |

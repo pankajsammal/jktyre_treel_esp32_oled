@@ -7,8 +7,6 @@
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
 #include "DisplayDriverST7789.h"
-#elif DISPLAY_TYPE == DISPLAY_TYPE_ILI9225
-#include "DisplayDriverILI9225.h"
 #elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306 || DISPLAY_TYPE == DISPLAY_TYPE_SH1106
 #include "DisplayDriverOLED.h"
 #endif
@@ -17,8 +15,6 @@ class DisplayManager {
 private:
 #if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
     DisplayDriverST7789 m_driver;
-#elif DISPLAY_TYPE == DISPLAY_TYPE_ILI9225
-    DisplayDriverILI9225 m_driver;
 #elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306 || DISPLAY_TYPE == DISPLAY_TYPE_SH1106
     DisplayDriverOLED m_driver;
 #endif

@@ -68,7 +68,7 @@ If your ESP32-C3 SuperMini is not recognized by your computer:
 
 ---
 
-### Option A: 2.0" ILI9225 SPI TFT Display Module Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.1)
+### Option A: 2.0" ST7789 SPI TFT Display Module Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.3)
 
 Connect the 7-pin 2.0" TFT SPI module to the ESP32-C3 SuperMini headers:
 
