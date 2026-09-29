@@ -31,9 +31,11 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 - **Headless Mode**: Can run completely headless (`DISPLAY_TYPE_NONE`) as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway with zero display overhead.
 
 <p align="center">
-  <img src="docs/images/oled_display_preview.jpg" width="420" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
+  <img src="docs/images/tft_display_preview.jpg" width="410" alt="2.0 Inch ST7789 TFT Display Modern TPMS Dashboard">
+  &nbsp;&nbsp;
+  <img src="docs/images/oled_display_preview.jpg" width="370" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
   <br>
-  <em>1.3" I2C OLED Display showing live TPMS tire pressures (FL: 31 PSI, FR: 30 PSI, RL: 32 PSI, RR: 32 PSI) and web server IP address.</em>
+  <em>Live TPMS Display Previews: 2.0" ST7789 SPI TFT Color Display with modern glassmorphism UI & alert warnings (Left) and 1.3" I2C OLED Display (Right).</em>
 </p>
 
 ---
