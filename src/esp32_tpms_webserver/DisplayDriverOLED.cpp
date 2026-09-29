@@ -14,7 +14,7 @@ void DisplayDriverOLED::begin() {
         delay(50);
     }
 
-    Wire.begin(ConfigMgr.oled_sda_pin, ConfigMgr.oled_scl_pin);
+    Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
     m_u8g2.begin();
     m_u8g2.clearBuffer();
     m_u8g2.setFont(u8g2_font_7x14B_tr);
