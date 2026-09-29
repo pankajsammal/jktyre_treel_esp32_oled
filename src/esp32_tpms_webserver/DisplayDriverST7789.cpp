@@ -45,6 +45,9 @@ void DisplayDriverST7789::begin() {
     m_initialized = true;
     m_headerDrawn = false;
     m_cardsDrawn = false;
+    m_lastIp = "";
+    m_lastUnit = 0xFF;
+    for (int i = 0; i < 4; i++) m_lastAlertState[i] = 0xFF;
 }
 
 void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel, int x, int y, int w, int h, uint32_t now_ms) {
@@ -156,8 +159,9 @@ void DisplayDriverST7789::render(const TireData tires[4]) {
     if (!m_initialized) return;
     uint32_t now_ms = millis();
 
-    // 1. TOP HEADER BAR (Draw background once)
+    // 1. TOP HEADER BAR (Draw background once and clear boot screen text)
     if (!m_headerDrawn) {
+        m_tft.fillScreen(ST7789_BG_COLOR);
         m_tft.fillRect(0, 0, 320, 26, ST7789_BG_COLOR);
         m_tft.drawFastHLine(0, 26, 320, ST7789_BORDER_COLOR);
         m_headerDrawn = true;
