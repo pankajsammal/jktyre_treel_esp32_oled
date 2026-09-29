@@ -25,7 +25,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
   - `GET /api/clear`: Clears rolling log buffer.
 - **Dual Wi-Fi Modes**: Tries connecting to your Wi-Fi router (STA mode) first; automatically falls back to Access Point mode (`ESP32_TPMS_Dashboard` / `12345678`).
 - **Modular Multi-Display Support (Zero Memory Overhead)**:
-  - **2.0" ST7789 SPI TFT Color Display** (GMT020-02 320x240 Landscape) — High resolution 4-quadrant modern automotive layout with FreeSans vector typography, battery %, and double-buffered age timers.
+  - **[2.0 Inch TFT Color LCD Display SPI Module | Robu.in](https://robu.in/product/20-inch-tft-color-screen-lcd-display-module-spi-interface/)** (GMT020-02 320x240 Landscape) — High resolution 4-quadrant modern automotive layout with FreeSans vector typography, battery %, and double-buffered age timers.
   - **1.3" SH1106 & 0.96" SSD1306 I2C OLED Displays** (128x64 resolution).
   - **Conditional Compilation**: Preprocessor macros (`DISPLAY_TYPE`) ensure only the selected display driver & font tables are compiled, keeping binary footprint minimal.
 - **Headless Mode**: Can run completely headless (`DISPLAY_TYPE_NONE`) as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway with zero display overhead.
@@ -197,7 +197,7 @@ const char* const SENSOR_SHORT_IDS[4] = {
 
 ## 🔌 Hardware Wiring Tables
 
-### 1. 2.0" ST7789 SPI TFT Display Module Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.3)
+### 1. [2.0 Inch TFT Color LCD Display SPI Module | Robu.in](https://robu.in/product/20-inch-tft-color-screen-lcd-display-module-spi-interface/) Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.3)
 
 | Module Pin Label | Standard ESP32 (DevKit) | ESP32-C3 SuperMini | Description |
 | :--- | :--- | :--- | :--- |
