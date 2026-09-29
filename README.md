@@ -35,7 +35,7 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
   &nbsp;&nbsp;
   <img src="docs/images/oled_display_preview.jpg" width="370" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
   <br>
-  <em>Live TPMS Display Previews: 2.0" ST7789 SPI TFT Color Display with modern glassmorphism UI & alert warnings (Left) and 1.3" I2C OLED Display (Right).</em>
+  <em>Live TPMS Display Previews: 2.0" ST7789 SPI TFT Color Display with modern UI & alert warnings (Left) and 1.3" I2C OLED Display (Right).</em>
 </p>
 
 ---
