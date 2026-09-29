@@ -14,7 +14,7 @@
 // 1. FEATURE & TEST MODE SWITCHES
 // ---------------------------------------------------------------------
 #define ENABLE_WEBSERVER     true    // Set to false to disable Wi-Fi and Web Server (Pure BLE / Ultra Low Power)
-#define ENABLE_DEMO_MODE     true   // Set to true to test Display & Web Server with dummy values & warnings
+#define ENABLE_DEMO_MODE     false   // Set to true to test Display & Web Server with dummy values & warnings
 
 // Display Hardware Selector Constants
 #define DISPLAY_TYPE_NONE     0      // Headless Mode (No screen attached, zero display code compiled)
