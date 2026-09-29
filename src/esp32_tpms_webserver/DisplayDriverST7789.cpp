@@ -168,20 +168,21 @@ void DisplayDriverST7789::renderCard(const TireData& tire, const char* posLabel,
     }
 
     if (strcmp(psiBuf, m_lastPsi[posIdx]) != 0) {
-        GFXcanvas16 canvas(74, 76);
+        GFXcanvas16 canvas(84, 76);
         canvas.fillScreen(cardBg);
         canvas.setFont(&FreeSansBold24pt7b);
         int16_t px1, py1;
         uint16_t pw, ph;
         canvas.getTextBounds(psiBuf, 0, 0, &px1, &py1, &pw, &ph);
 
-        int psiX = 74 - pw;
-        if (psiX < 0) psiX = 0;
+        // Right align digits with 6px right padding, accounting for font left bearing
+        int psiX = 84 - (int)pw - (int)px1 - 6;
+        if (psiX < 2) psiX = 2;
 
         canvas.setTextColor(textMain);
         canvas.setCursor(psiX, 56);
         canvas.print(psiBuf);
-        m_tft.drawRGBBitmap(x + 68, y + 10, canvas.getBuffer(), 74, 76);
+        m_tft.drawRGBBitmap(x + 58, y + 10, canvas.getBuffer(), 84, 76);
         snprintf(m_lastPsi[posIdx], sizeof(m_lastPsi[posIdx]), "%s", psiBuf);
     }
 }
