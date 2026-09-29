@@ -24,8 +24,11 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
   - `GET /api/logs`: Returns recent system logs.
   - `GET /api/clear`: Clears rolling log buffer.
 - **Dual Wi-Fi Modes**: Tries connecting to your Wi-Fi router (STA mode) first; automatically falls back to Access Point mode (`ESP32_TPMS_Dashboard` / `12345678`).
-- **Optional OLED Display**: Supports 1.3" SH1106 and 0.96" SSD1306 I2C OLED screens with a 4-quadrant layout.
-- **Headless Mode**: Can run completely headless as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway inside your vehicle.
+- **Modular Multi-Display Support (Zero Memory Overhead)**:
+  - **[2.0 Inch TFT Color LCD Display SPI Module | Robu.in](https://robu.in/product/20-inch-tft-color-screen-lcd-display-module-spi-interface/)** (GMT020-02 320x240 Landscape) — High resolution 4-quadrant modern automotive layout with FreeSans vector typography, battery %, and double-buffered age timers.
+  - **1.3" SH1106 & 0.96" SSD1306 I2C OLED Displays** (128x64 resolution).
+  - **Conditional Compilation**: Preprocessor macros (`DISPLAY_TYPE`) ensure only the selected display driver & font tables are compiled, keeping binary footprint minimal.
+- **Headless Mode**: Can run completely headless (`DISPLAY_TYPE_NONE`) as a discreet wireless BLE $\rightarrow$ Wi-Fi gateway with zero display overhead.
 
 <p align="center">
   <img src="docs/images/oled_display_preview.jpg" width="420" alt="1.3 Inch OLED Display Real-Time TPMS Dashboard">
@@ -49,12 +52,12 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
                        │ (DevKit / C3 SuperMini)│
                        └─────┬────────────┬─────┘
                              │            │
-             Wi-Fi (AP/STA)  │            │  I2C (Optional)
+             Wi-Fi (AP/STA)  │            │  SPI / I2C (Modular)
                              ▼            ▼
-                     ┌───────────────┐ ┌──────────────┐
-                     │ Web Dashboard │ │ OLED Display │
-                     │  & REST API   │ │ (1.3"/0.96") │
-                     └───────────────┘ └──────────────┘
+                     ┌───────────────┐ ┌───────────────────────┐
+                     │ Web Dashboard │ │ OLED (1.3"/0.96" I2C) │
+                     │  & REST API   │ │ TFT (2.0" ST7789 SPI) │
+                     └───────────────┘ └───────────────────────┘
 ```
 
 ---
@@ -79,7 +82,9 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
         ├── Config.h                   # Pins (auto-detects ESP32 vs C3), Wi-Fi & sensor whitelist
         ├── ConfigManager.h / .cpp     # NVS Flash persistent settings manager
         ├── Logger.h / Logger.cpp      # Thread-safe event logging ring buffer
-        ├── DisplayManager.h / .cpp    # Zero-heap I2C OLED display renderer
+        ├── DisplayManager.h / .cpp    # Unified facade for display drivers
+        ├── DisplayDriverST7789.h/.cpp # 2.0" SPI TFT driver (320x240 GMT020-02)
+        ├── DisplayDriverOLED.h / .cpp # 128x64 I2C OLED driver (SSD1306 / SH1106)
         ├── WebServerManager.h / .cpp  # Web dashboard & REST API
         └── esp32_tpms_webserver.ino   # Main entry point sketch
 ```
@@ -94,7 +99,9 @@ Open-source **Bluetooth Low Energy (BLE)** receiver, decoder, responsive Web Das
 2. Go to **Tools -> Manage Libraries...**
 3. Search for and install:
    - **`NimBLE-Arduino`** (by *h2zero*) — Required for BLE scanning.
-   - **`U8g2`** (by *Oliver Kraus*) — Required only if using OLED display (`ENABLE_OLED true`).
+   - **`Adafruit ST7735 and ST7789 Library`** (by *Adafruit*) — Required for ST7789 2.0" 320x240 TFT displays (`DISPLAY_TYPE_ST7789`).
+   - **`Adafruit GFX Library`** (by *Adafruit*) — Required graphics core library for Adafruit displays.
+   - **`U8g2`** (by *Oliver Kraus*) — Required for I2C OLED displays (SSD1306 / SH1106).
 
 ### 2. Select Firmware & Configure Settings
 
@@ -120,11 +127,11 @@ All user settings, units, alert thresholds, hardware pins, and network parameter
 
 | Configuration Option | Default Value | Description |
 | :--- | :--- | :--- |
+| **`DISPLAY_TYPE`** | `DISPLAY_TYPE_ST7789` | Select display: `DISPLAY_TYPE_ST7789` (2.0" ST7789V SPI TFT), `DISPLAY_TYPE_SH1106` (1.3" OLED), `DISPLAY_TYPE_SSD1306` (0.96" OLED), `DISPLAY_TYPE_NONE` (Headless) |
 | **`ENABLE_WEBSERVER`** | `true` | Set to `false` to disable Wi-Fi and Web Server (pure ultra-low-power BLE mode) |
-| **`ENABLE_OLED`** | `true` | Set to `false` if running headless without an I2C OLED screen |
-| **`ENABLE_DEMO_MODE`** | `false` | Set to `true` to test OLED & Web Dashboard with simulated dummy values & warnings |
-| **`DISPLAY_PRESSURE_UNIT`** | `UNIT_PSI` | Select OLED pressure unit: `UNIT_PSI` (PSI), `UNIT_BAR` (Bar), or `UNIT_KPA` (kPa) |
-| **`DISPLAY_TEMP_UNIT`** | `UNIT_CELSIUS` | Select OLED temperature unit: `UNIT_CELSIUS` (°C) or `UNIT_FAHRENHEIT` (°F) |
+| **`ENABLE_DEMO_MODE`** | `false` | Set to `true` to test Display & Web Dashboard with simulated dummy values & warnings |
+| **`DISPLAY_PRESSURE_UNIT`** | `UNIT_PSI` | Select pressure unit: `UNIT_PSI` (PSI), `UNIT_BAR` (Bar), or `UNIT_KPA` (kPa) |
+| **`DISPLAY_TEMP_UNIT`** | `UNIT_CELSIUS` | Select temperature unit: `UNIT_CELSIUS` (°C) or `UNIT_FAHRENHEIT` (°F) |
 | **`ALERT_MIN_PSI`** | `26.0f` | Low pressure warning threshold (PSI) |
 | **`ALERT_MAX_PSI`** | `40.0f` | High pressure warning threshold (PSI) |
 | **`ALERT_MAX_TEMP_C`** | `70.0f` | High temperature warning threshold (°C) |
@@ -190,18 +197,30 @@ const char* const SENSOR_SHORT_IDS[4] = {
 
 ## 🔌 Hardware Wiring Tables
 
-### Standard ESP32 (38-Pin / 30-Pin DevKit) with OLED Display
+### 1. [2.0 Inch TFT Color LCD Display SPI Module | Robu.in](https://robu.in/product/20-inch-tft-color-screen-lcd-display-module-spi-interface/) Wiring (`GMT020-02` / `2.0TFTSPI` VER:1.3)
 
-All 4 OLED wires connect directly to the **LEFT HEADER** of the 38-pin board:
+| Module Pin Label | Standard ESP32 (DevKit) | ESP32-C3 SuperMini | Description |
+| :--- | :--- | :--- | :--- |
+| **Pin 1: CS** | **GPIO 5** | **GPIO 7** | SPI Chip Select |
+| **Pin 2: DC** | **GPIO 16** | **GPIO 3** | Register Select / Data-Command |
+| **Pin 3: RST** | **GPIO 17** | **GPIO 2** | Display Hardware Reset |
+| **Pin 4: SDA** | **GPIO 23** (VSPI MOSI) | **GPIO 6** | SPI Data Input (MOSI) |
+| **Pin 5: SCL** | **GPIO 18** (VSPI SCK) | **GPIO 4** | SPI Clock Input (SCK) |
+| **Pin 6: VCC** | **3.3V / 5V** | **3.3V / 5V** | Power Supply (3.3V to 5V input support) |
+| **Pin 7: GND** | **GND** | **GND** | Ground |
 
-| OLED Display Pin | ESP32 Board Label | Location on Board |
+*Note: The GMT020-02 module features an on-board Q1 backlight transistor powered directly by VCC.*
+
+### 2. 1.3" / 0.96" I2C OLED Display Module Wiring
+
+| OLED Pin | Standard ESP32 (DevKit) | ESP32-C3 SuperMini |
 | :--- | :--- | :--- |
-| **VCC** | **3.3V** | Top-Left Pin (Pin 1) |
-| **SCL** | **GPIO 27** | Left Header (Pin 11) |
-| **SDA** | **GPIO 14** | Left Header (Pin 12) |
-| **GND** | **GND** | Left Header (Pin 14) |
+| **VCC** | **3.3V** | **3.3V** |
+| **GND** | **GND** | **GND** |
+| **SCL** | **GPIO 27** | **GPIO 9** |
+| **SDA** | **GPIO 14** | **GPIO 8** |
 
-*For ESP32-C3 SuperMini wiring, see [ESP32-C3 SuperMini Setup Guide](docs/ESP32_C3_SUPERMINI_GUIDE.md).*
+*For dedicated ESP32-C3 SuperMini setup guide, see [ESP32-C3 SuperMini Setup Guide](docs/ESP32_C3_SUPERMINI_GUIDE.md).*
 
 ---
 

@@ -32,7 +32,7 @@ void setup() {
     // 0. Load Dynamic Settings from NVS Flash
     ConfigMgr.begin();
 
-    // 1. Initialize OLED Display (if enabled)
+    // 1. Initialize Display (OLED / TFT if enabled)
     Display.begin();
 
     // 2. Initialize Wi-Fi & Web Server Dashboard (if enabled)
@@ -57,7 +57,7 @@ void loop() {
     // 1. Handle Web Server requests
     WebDash.handleClient();
 
-    // 2. Render OLED Display periodically (every 250ms)
+    // 2. Render Display periodically (every 250ms)
     static unsigned long lastDisplayUpdate = 0;
     if (millis() - lastDisplayUpdate >= 250) {
         lastDisplayUpdate = millis();
